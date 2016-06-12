@@ -63,7 +63,7 @@ There are 5 pieces
 
 - One 4 space ship: `| O | O | O | O |`
 
-- Two 3 space ships: `| O | O | O |`  `| O | O | O |`
+- Two 3 space ships: `| O | O | O |` + `| O | O | O |`
 
 - One 2 space ship: | O | O |
 
