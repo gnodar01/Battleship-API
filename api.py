@@ -20,8 +20,8 @@ from utils import get_by_urlsafe
 @endpoints.api(name='battle-ship', version='v1')
 class BattleshipAPI(remote.Service):
     """Game API"""
-    @endpoints.method(request_message=,
-                      response_message=,
+    @endpoints.method(request_message="",
+                      response_message="",
                       path='',
                       name='',
                       http_method='POST')
