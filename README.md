@@ -9,11 +9,13 @@ For example (whilst quit from google chrome):
 
 - To navigate to the Google API explorer on the appspot domain, go to https://[your project id].appspot.com/_ah/api/explorer
   - For example:
-  > https://nodar-conference.appspot.com/_ah/api/explorer
+
+> https://nodar-conference.appspot.com/_ah/api/explorer
 
 - To navigate to the Google API explorer on localhost, go to http://localhost:[Port Number]/_ah/api/explorer
   - For example:
-  > http://localhost:8080/_ah/api/explorer
+  
+> http://localhost:8080/_ah/api/explorer
 
 
 
