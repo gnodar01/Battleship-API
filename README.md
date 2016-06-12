@@ -11,7 +11,7 @@ To navigate to the Google API explorer on the appspot domain, go to https://[you
 
 For example:
 
-> https://nodar-conference.appspot.com/_ah/api/explorer
+> https://nodar-battle-ship.appspot.com/_ah/api/explorer
 
 To navigate to the Google API explorer on localhost, go to http://localhost:[Port Number]/_ah/api/explorer
 
