@@ -63,7 +63,7 @@ There are 5 pieces
 
 - One 4 space ship - A Battleship: `| O | O | O | O |`
 
-- Two 3 space ships - A Submarine + a Destroyer: `| O | O | O |` + `| O | O | O |`
+- Two 3 space ships - A Submarine + A Destroyer: `| O | O | O |` + `| O | O | O |`
 
 - One 2 space ship - A Patrol Ship: `| O | O |`
 
