@@ -59,11 +59,11 @@ The board is 10 x 10
 
 There are 5 pieces
 
-- One 5 space ship: `| O | O | O | O | O |`
+- One 5 space ship - An Aircraft Carrier: `| O | O | O | O | O |`
 
-- One 4 space ship: `| O | O | O | O |`
+- One 4 space ship - A Battleship: `| O | O | O | O |`
 
-- Two 3 space ships: `| O | O | O |` + `| O | O | O |`
+- Two 3 space ships - A Submarine + a Destroyer: `| O | O | O |` + `| O | O | O |`
 
-- One 2 space ship: `| O | O |`
+- One 2 space ship - A Patrol Ship: `| O | O |`
 
