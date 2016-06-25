@@ -42,7 +42,7 @@ class BattleshipAPI(remote.Service):
 
     @endpoints.method(request_message=NewGameRequest,
                       response_message=StringMessage,
-                      path='game',
+                      path='game/new',
                       name='create_game',
                       http_method='POST')
     def create_game(self, request):
