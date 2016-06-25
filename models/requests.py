@@ -14,5 +14,5 @@ class UserRequest(messages.Message):
 
 class NewGameRequest(messages.Message):
     player_one_name = messages.StringField(1, required=True)
-    player_two_name = messages.StringField(2, required=True)
+    player_two_name = messages.StringField(2)
 
