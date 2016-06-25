@@ -18,7 +18,7 @@ from protorpc import remote, messages, message_types
 
 from models.nbdModels import User
 from models.protorpcModels import StringMessage
-from models.requests import UserRequest
+from models.requests import UserRequest, NewGameRequest
 # from utils import get_by_urlsafe
 
 
@@ -34,6 +34,7 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_user(self, request):
         """Create a User. Requires a unique username"""
+        # TODO: make sure user_name is min of 3 char and email is proper format (regex?)
         if User.query(User.name == request.user_name).get():
             raise endpoints.ConflictException(
                     'A User with that name already exists!')
@@ -42,14 +43,16 @@ class BattleshipAPI(remote.Service):
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
 
-    @endpoints.method(request_message=message_types.VoidMessage,
+    @endpoints.method(request_message=NewGameRequest,
                       response_message=StringMessage,
                       path='game',
                       name='create_game',
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
-        return StringMessage(message='')
+        pOne = User.query(User.name == request.player_one_name).get()
+        pTwo = User.query(User.name == request.player_two_name).get()
+        return StringMessage(message='player one is {}, player two is {}'.format(pOne.name, pTwo.name))
 
 
 
