@@ -8,8 +8,6 @@ api.py - Udacity conference server-side Python App Engine API;
     created by Nodari Gogoberidze - June 2016
 """
 
-
-
 # import logging
 import endpoints
 from protorpc import remote, messages, message_types
@@ -20,7 +18,6 @@ from models.nbdModels import User
 from models.protorpcModels import StringMessage
 from models.requests import UserRequest, NewGameRequest
 # from utils import get_by_urlsafe
-
 
 
 @endpoints.api(name='battle_ship', version='v1')
