@@ -16,3 +16,7 @@ class NewGameRequest(messages.Message):
     player_one_name = messages.StringField(1, required=True)
     player_two_name = messages.StringField(2)
 
+class JoinGameRequest(messages.Message):
+	game_key = messages.StringField(1, required=True)
+	player_two_name = messages.StringField(2)
+

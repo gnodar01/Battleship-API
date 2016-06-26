@@ -16,8 +16,8 @@ from protorpc import remote, messages, message_types
 
 from models.nbdModels import User, Game
 from models.protorpcModels import StringMessage
-from models.requests import UserRequest, NewGameRequest
-# from utils import get_by_urlsafe
+from models.requests import UserRequest, NewGameRequest, JoinGameRequest
+from utils import get_by_urlsafe
 
 
 @endpoints.api(name='battle_ship', version='v1')
@@ -47,20 +47,30 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
+        # TODO: if pOne does not exist return error
         pOne = User.query(User.name == request.player_one_name).get()
         if request.player_two_name:
-          pTwo = User.query(User.name == request.player_two_name).get()
-          game = Game(player_one=pOne.key, player_two=pTwo.key)
-          print game
-          # game.put()
-          return StringMessage(message='player one is {}, player two is {}'.format(pOne.name, pTwo.name))
+            # TODO: if pTwo does not exist throw error
+            pTwo = User.query(User.name == request.player_two_name).get()
+            game = Game(player_one=pOne.key, player_two=pTwo.key)
+            print game
+            # game.put()
+            return StringMessage(message='player one is {}, player two is {}'.format(pOne.name, pTwo.name))
         else:
-          game = Game(player_one=pOne.key)
-          print game
-          # game.put()
-          return StringMessage(message='player one is {}'.format(pOne.name))
+            game = Game(player_one=pOne.key)
+            print game
+            # game.put()
+            return StringMessage(message='player one is {}'.format(pOne.name))
 
-
+    @endpoints.method(request_message=JoinGameRequest,
+                      response_message=StringMessage,
+                      path='game/join',
+                      name='join_game',
+                      http_method='POST')
+    def join_game(self, request):
+        """Join a game if not already full"""
+        game = get_by_urlsafe(request.game_key, Game)
+        return StringMessage(message=str(game))
 
 
 
