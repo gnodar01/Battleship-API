@@ -16,8 +16,16 @@ from protorpc import remote, messages, message_types
 
 from models.nbdModels import User, Game
 from models.protorpcModels import StringMessage
-from models.requests import UserRequest, NewGameRequest, JoinGameRequest
+from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest
 from utils import get_by_urlsafe
+
+PIECES = {
+    'aircraft_carrier': 'Aircraft Carrier',
+    'battleship': 'Battleship',
+    'submarine': 'Submarine',
+    'destroyer': 'Destroyer',
+    'patrol_ship': 'Patrol Ship'
+}
 
 
 @endpoints.api(name='battle_ship', version='v1')
@@ -79,6 +87,18 @@ class BattleshipAPI(remote.Service):
             game.player_two = playerTwo.key
             # game.put()
         return StringMessage(message=str(game))
+
+    @endpoints.method(request_message=PlacePieceRequest,
+                      response_message=StringMessage,
+                      path='game/setup/place_piece',
+                      name='place_piece',
+                      http_method='POST')
+    def place_piece(self, request):
+        """Set up a player's board pieces"""
+        # game = get_by_urlsafe(request.game_key, Game)
+        # player = User.query(User.name == request.player_name).get()
+        print request.piece_type
+        return StringMessage(message=str(request.piece_type))
 
 
 

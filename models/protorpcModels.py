@@ -11,3 +11,11 @@ class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)
 
+class PieceType(messages.Enum):
+	aircraft_carrier = 1
+	battleship = 2
+	submarine = 3
+	destroyer = 4
+	patrol_ship = 5
+
+	

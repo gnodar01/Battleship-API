@@ -6,6 +6,7 @@ import random
 import endpoints
 from datetime import date
 from protorpc import messages, message_types
+from models.protorpcModels import PieceType
 
 
 class UserRequest(messages.Message):
@@ -19,4 +20,11 @@ class NewGameRequest(messages.Message):
 class JoinGameRequest(messages.Message):
 	game_key = messages.StringField(1, required=True)
 	player_two_name = messages.StringField(2)
+
+class PlacePieceRequest(messages.Message):
+	game_key = messages.StringField(1)
+	player_name = messages.StringField(2)
+	piece_type = messages.EnumField(PieceType, 3, required=True) # PieceType can be string
+
+
 
