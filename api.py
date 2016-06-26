@@ -47,20 +47,20 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
-        # TODO: if pOne does not exist return error
-        pOne = User.query(User.name == request.player_one_name).get()
+        # TODO: if playerOne does not exist return error
+        playerOne = User.query(User.name == request.player_one_name).get()
         if request.player_two_name:
-            # TODO: if pTwo does not exist throw error
-            pTwo = User.query(User.name == request.player_two_name).get()
-            game = Game(player_one=pOne.key, player_two=pTwo.key)
+            # TODO: if playerTwo does not exist throw error
+            playerTwo = User.query(User.name == request.player_two_name).get()
+            game = Game(player_one=playerOne.key, player_two=playerTwo.key)
             print game
             # game.put()
-            return StringMessage(message='player one is {}, player two is {}'.format(pOne.name, pTwo.name))
+            return StringMessage(message='player one is {}, player two is {}'.format(playerOne.name, playerTwo.name))
         else:
-            game = Game(player_one=pOne.key)
+            game = Game(player_one=playerOne.key)
             print game
             # game.put()
-            return StringMessage(message='player one is {}'.format(pOne.name))
+            return StringMessage(message='player one is {}'.format(playerOne.name))
 
     @endpoints.method(request_message=JoinGameRequest,
                       response_message=StringMessage,
@@ -70,6 +70,14 @@ class BattleshipAPI(remote.Service):
     def join_game(self, request):
         """Join a game if not already full"""
         game = get_by_urlsafe(request.game_key, Game)
+        if game.player_two:
+            raise endpoints.ConflictException(
+                    'This game is already full!')
+        else:
+            # TODO: if playerTwo does not exist raise error
+            playerTwo = User.query(User.name == request.player_two_name).get()
+            game.player_two = playerTwo.key
+            # game.put()
         return StringMessage(message=str(game))
 
 
