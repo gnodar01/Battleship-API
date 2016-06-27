@@ -6,7 +6,7 @@ import random
 import endpoints
 from datetime import date
 from protorpc import messages, message_types
-from models.protorpcModels import PieceType
+from models.protorpcModels import PieceType, Alignment, Column
 
 
 class UserRequest(messages.Message):
@@ -25,6 +25,10 @@ class PlacePieceRequest(messages.Message):
 	game_key = messages.StringField(1)
 	player_name = messages.StringField(2)
 	piece_type = messages.EnumField(PieceType, 3, required=True) # PieceType can be string
+	piece_alignment = messages.EnumField(Alignment, 4, required=True)
+	first_row_coordinate = messages.IntegerField(5, required=True)
+	first_column_coordinate = messages.EnumField(Column, 6, required=True)
+
 
 
 

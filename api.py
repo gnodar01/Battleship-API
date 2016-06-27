@@ -20,12 +20,14 @@ from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlaceP
 from utils import get_by_urlsafe
 
 PIECES = {
-    'aircraft_carrier': 'Aircraft Carrier',
-    'battleship': 'Battleship',
-    'submarine': 'Submarine',
-    'destroyer': 'Destroyer',
-    'patrol_ship': 'Patrol Ship'
+    'aircraft_carrier': {'name': 'Aircraft Carrier', 'spaces': 5},
+    'battleship': {'name': 'Battleship', 'spaces': 4},
+    'submarine': {'name': 'Submarine', 'spaces': 3},
+    'destroyer': {'name': 'Destroyer', 'spaces': 3},
+    'patrol_ship': {'name': 'Patrol Ship', 'spaces': 2}
 }
+
+COLUMNS = ['a','b','c','d','e','f','g','h','i','j']
 
 
 @endpoints.api(name='battle_ship', version='v1')
@@ -95,10 +97,20 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def place_piece(self, request):
         """Set up a player's board pieces"""
+        if request.first_row_coordinate not in range(1,11):
+            raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
+        if (request.piece_alignment.name == 'vertical' and
+            request.first_row_coordinate + PIECES[request.piece_type.name]['spaces'] > 10):
+            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+        if (request.piece_alignment.name == 'horizontal' and
+            COLUMNS.index(request.first_column_coordinate.name) + PIECES[request.piece_type.name]['spaces'] > len(COLUMNS)):
+            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+
+
         # game = get_by_urlsafe(request.game_key, Game)
         # player = User.query(User.name == request.player_name).get()
-        print request.piece_type
-        return StringMessage(message=str(request.piece_type))
+        
+        return StringMessage(message=str(request.first_row_coordinate))
 
 
 
