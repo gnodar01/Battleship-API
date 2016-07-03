@@ -27,7 +27,9 @@ PIECES = {
     'patrol_ship': {'name': 'Patrol Ship', 'spaces': 2}
 }
 
-COLUMNS = ['a','b','c','d','e','f','g','h','i','j']
+COLUMNS = ['A','B','C','D','E','F','G','H','I','J']
+ROWS = ['1','2','3','4','5','6','7','8','9','10']
+GRID = [(column, row) for column in COLUMNS for row in ROWS]
 
 
 @endpoints.api(name='battle_ship', version='v1')
@@ -99,12 +101,16 @@ class BattleshipAPI(remote.Service):
         """Set up a player's board pieces"""
         if request.first_row_coordinate not in range(1,11):
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
+        if request.first_column_coordinate.name.upper() not in COLUMNS:
+            raise endpoints.ConflictException('Column coordinate must be between A - J')
         if (request.piece_alignment.name == 'vertical' and
             request.first_row_coordinate + PIECES[request.piece_type.name]['spaces'] > 10):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         if (request.piece_alignment.name == 'horizontal' and
-            COLUMNS.index(request.first_column_coordinate.name) + PIECES[request.piece_type.name]['spaces'] > len(COLUMNS)):
+            COLUMNS.index(request.first_column_coordinate.name.upper()) + PIECES[request.piece_type.name]['spaces'] > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+        # TODO: raise error if piece has already been place for this board
+        # TODO: raise error if piece intersects with any other piece
 
 
         # game = get_by_urlsafe(request.game_key, Game)
