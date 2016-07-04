@@ -12,12 +12,13 @@ class User(ndb.Model):
     name = ndb.StringProperty(required=True)
     email = ndb.StringProperty(required=True)
 
-
 class Game(ndb.Model):
     """Game object for game details and status"""
     player_one = ndb.KeyProperty(required=True, kind='User')
     player_two = ndb.KeyProperty(kind='User')
-    pieces_loaded = ndb.BooleanProperty(required=True, default=False)
+    player_one_pieces_loaded = ndb.BooleanProperty(required=True, default=False)
+    player_two_pieces_loaded = ndb.BooleanProperty(required=True, default=False)
+    game_started = ndb.BooleanProperty(required=True, default=False)
     game_over = ndb.BooleanProperty(required=True, default=False)
 
 class Piece(ndb.Model):

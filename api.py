@@ -19,6 +19,7 @@ from models.protorpcModels import StringMessage
 from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest
 from utils import get_by_urlsafe
 
+
 PIECES = {
     'aircraft_carrier': {'name': 'Aircraft Carrier', 'spaces': 5},
     'battleship': {'name': 'Battleship', 'spaces': 4},
@@ -119,7 +120,7 @@ class BattleshipAPI(remote.Service):
         player = User.query(User.name == request.player_name).get()
 
         # Raise error if all of the pieces for this player and this game have been placed already
-        if game.pieces_loaded:
+        if game.game_started:
             raise endpoints.ConflictException('All of the pieces for this game have already been placed')
 
         # Get all coordinates of the piece based on it's starting coordinates and piece size
@@ -150,10 +151,16 @@ class BattleshipAPI(remote.Service):
 
         # Check if all pieces for this player & game have been placed
         if len(placedShips) == len(PIECES):
-            game.pieces_loaded = True
+            if player.key == game.player_one:
+                game.player_one_pieces_loaded = True
+            else:
+                game.player_two_pieces_loaded = True
+            # Start game if all pieces for both players have been loaded
+            if game.player_one_pieces_loaded == True and game.player_two_pieces_loaded == True:
+                game.game_started = True
             game.put()
 
-        return StringMessage(message=str(piece))
+        return StringMessage(message=str(placedShips))
 
 
 

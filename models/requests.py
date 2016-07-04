@@ -28,7 +28,3 @@ class PlacePieceRequest(messages.Message):
 	piece_alignment = messages.EnumField(Alignment, 4, required=True)
 	first_row_coordinate = messages.StringField(5, required=True)
 	first_column_coordinate = messages.StringField(6, required=True)
-
-
-
-
