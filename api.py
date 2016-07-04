@@ -118,11 +118,9 @@ class BattleshipAPI(remote.Service):
         # TODO: raise error if game is already active or over
 
         if request.piece_alignment.name == 'vertical':
-            print 'poopie'
             rows = ROWS[rowIndex:rowIndex + numSpaces]
             columns = COLUMNS[colIndex]
         else:
-            print 'dookie'
             rows = ROWS[rowIndex]
             columns = COLUMNS[colIndex:colIndex + numSpaces]
 
