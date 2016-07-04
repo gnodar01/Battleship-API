@@ -138,9 +138,9 @@ class BattleshipAPI(remote.Service):
             if placedPiece.ship == request.piece_type.name:
                 raise endpoints.ConflictException('This piece has already been placed for this player')
             # Raise error if piece intersects with any other piece
-            for reservedCoordinate in placedPiece.coordinates:
-                if reservedCoordinate in coordinates:
-                    raise endpoints.ConflictException('Your piece intersects with {}'.format(reservedCoordinate))
+            for placedCoordinate in placedPiece.coordinates:
+                if placedCoordinate in coordinates:
+                    raise endpoints.ConflictException('Your piece intersects with {}'.format(placedCoordinate))
 
         piece = Piece(game=game.key, player=player.key, ship=request.piece_type.name, coordinates=coordinates)
         # piece.put()
