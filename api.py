@@ -99,6 +99,7 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def place_piece(self, request):
         """Set up a player's board pieces"""
+        # Raise errors if the row or column coordinates are not valid
         if request.first_row_coordinate not in ROWS:
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         if request.first_column_coordinate.upper() not in COLUMNS:
@@ -108,15 +109,20 @@ class BattleshipAPI(remote.Service):
         rowIndex = ROWS.index(request.first_row_coordinate)
         colIndex = COLUMNS.index(request.first_column_coordinate.upper())
 
+        # Raise errors if the peice is being placed outside of the bounds of the board
         if (request.piece_alignment.name == 'vertical' and rowIndex + numSpaces > len(ROWS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         if (request.piece_alignment.name == 'horizontal' and colIndex + numSpaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
-        # TODO: raise error if piece has already been place for this board
-        # TODO: raise error if piece intersects with any other piece
-        # TODO: raise error if the piece has already been placed on the player's board
-        # TODO: raise error if game is already active or over
 
+        game = get_by_urlsafe(request.game_key, Game)
+        player = User.query(User.name == request.player_name).get()
+
+        # Raise error if all of the pieces for this player and this game have been placed already
+        if game.pieces_loaded:
+            raise endpoints.ConflictException('All of the pieces for this game have already been placed')
+
+        # Get all coordinates of the piece based on it's starting coordinates and piece size
         if request.piece_alignment.name == 'vertical':
             columns = COLUMNS[colIndex]
             rows = ROWS[rowIndex:rowIndex + numSpaces]
@@ -125,10 +131,19 @@ class BattleshipAPI(remote.Service):
             rows = ROWS[rowIndex]
         coordinates = [(col + row) for col in columns for row in rows]
 
-        game = get_by_urlsafe(request.game_key, Game)
-        player = User.query(User.name == request.player_name).get()
-        piece = Piece(game=game.key, player=player.key, coordinates=coordinates)
-        piece.put()
+        # Errors based on player's previously placed pieces for this game
+        gamePlayerPieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
+        for placedPiece in gamePlayerPieces:
+            # Raise error if the piece has already been placed on the player's board
+            if placedPiece.ship == request.piece_type.name:
+                raise endpoints.ConflictException('This piece has already been placed for this player')
+            # Raise error if piece intersects with any other piece
+            for reservedCoordinate in placedPiece.coordinates:
+                if reservedCoordinate in coordinates:
+                    raise endpoints.ConflictException('Your piece intersects with {}'.format(reservedCoordinate))
+
+        piece = Piece(game=game.key, player=player.key, ship=request.piece_type.name, coordinates=coordinates)
+        # piece.put()
 
         return StringMessage(message=str(piece))
 

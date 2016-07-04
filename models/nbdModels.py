@@ -21,9 +21,10 @@ class Game(ndb.Model):
     game_over = ndb.BooleanProperty(required=True, default=False)
 
 class Piece(ndb.Model):
-	"""Location and status of player's game pieces"""
-	game = ndb.KeyProperty(required=True, kind='Game')
-	player = ndb.KeyProperty(required=True, kind='User')
-	coordinates = ndb.StringProperty(repeated=True)
-	hit_marks = ndb.StringProperty(repeated=True)
-	sunk = ndb.BooleanProperty(required=True, default=False)
+    """Location and status of player's game pieces"""
+    game = ndb.KeyProperty(required=True, kind='Game')
+    player = ndb.KeyProperty(required=True, kind='User')
+    ship = ndb.StringProperty(required=True)
+    coordinates = ndb.StringProperty(repeated=True)
+    hit_marks = ndb.StringProperty(repeated=True)
+    sunk = ndb.BooleanProperty(required=True, default=False)
