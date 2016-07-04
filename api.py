@@ -14,7 +14,7 @@ from protorpc import remote, messages, message_types
 # from google.appengine.api import memcache
 # from google.appengine.api import taskqueue
 
-from models.nbdModels import User, Game
+from models.nbdModels import User, Game, Piece
 from models.protorpcModels import StringMessage
 from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest
 from utils import get_by_urlsafe
@@ -66,12 +66,12 @@ class BattleshipAPI(remote.Service):
             playerTwo = User.query(User.name == request.player_two_name).get()
             game = Game(player_one=playerOne.key, player_two=playerTwo.key)
             print game
-            # game.put()
+            game.put()
             return StringMessage(message='player one is {}, player two is {}'.format(playerOne.name, playerTwo.name))
         else:
             game = Game(player_one=playerOne.key)
             print game
-            # game.put()
+            game.put()
             return StringMessage(message='player one is {}'.format(playerOne.name))
 
     @endpoints.method(request_message=JoinGameRequest,
@@ -89,7 +89,7 @@ class BattleshipAPI(remote.Service):
             # TODO: if playerTwo does not exist raise error
             playerTwo = User.query(User.name == request.player_two_name).get()
             game.player_two = playerTwo.key
-            # game.put()
+            game.put()
         return StringMessage(message=str(game))
 
     @endpoints.method(request_message=PlacePieceRequest,
@@ -99,24 +99,39 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def place_piece(self, request):
         """Set up a player's board pieces"""
+        numSpaces = PIECES[request.piece_type.name]['spaces']
+        rowIndex = ROWS.index(request.first_row_coordinate)
+        colIndex = COLUMNS.index(request.first_column_coordinate.upper())
         if request.first_row_coordinate not in ROWS:
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         if request.first_column_coordinate.upper() not in COLUMNS:
             raise endpoints.ConflictException('Column coordinate must be between A - J')
-        if (request.piece_alignment.name == 'vertical' and
-            ROWS.index(request.first_row_coordinate) + PIECES[request.piece_type.name]['spaces'] > len(ROWS)):
+        if (request.piece_alignment.name == 'vertical' and rowIndex + numSpaces > len(ROWS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
-        if (request.piece_alignment.name == 'horizontal' and
-            COLUMNS.index(request.first_column_coordinate.upper()) + PIECES[request.piece_type.name]['spaces'] > len(COLUMNS)):
+        if (request.piece_alignment.name == 'horizontal' and colIndex + numSpaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         # TODO: raise error if piece has already been place for this board
         # TODO: raise error if piece intersects with any other piece
+        # TODO: raise error if the piece has already been placed on the player's board
+        # TODO: raise error if game is already active or over
 
+        if request.piece_alignment.name == 'vertical':
+            print 'poopie'
+            rows = ROWS[rowIndex:rowIndex + numSpaces]
+            columns = COLUMNS[colIndex]
+        else:
+            print 'dookie'
+            rows = ROWS[rowIndex]
+            columns = COLUMNS[colIndex:colIndex + numSpaces]
 
-        # game = get_by_urlsafe(request.game_key, Game)
-        # player = User.query(User.name == request.player_name).get()
+        coordinates = [(col + row) for col in columns for row in rows]
+
+        game = get_by_urlsafe(request.game_key, Game)
+        player = User.query(User.name == request.player_name).get()
+
+        piece = Piece(game=game.key, player=player.key, coordinates=coordinates)
         
-        return StringMessage(message=str(request.first_row_coordinate))
+        return StringMessage(message=str(piece))
 
 
 
