@@ -99,13 +99,15 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def place_piece(self, request):
         """Set up a player's board pieces"""
-        numSpaces = PIECES[request.piece_type.name]['spaces']
-        rowIndex = ROWS.index(request.first_row_coordinate)
-        colIndex = COLUMNS.index(request.first_column_coordinate.upper())
         if request.first_row_coordinate not in ROWS:
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         if request.first_column_coordinate.upper() not in COLUMNS:
             raise endpoints.ConflictException('Column coordinate must be between A - J')
+
+        numSpaces = PIECES[request.piece_type.name]['spaces']
+        rowIndex = ROWS.index(request.first_row_coordinate)
+        colIndex = COLUMNS.index(request.first_column_coordinate.upper())
+
         if (request.piece_alignment.name == 'vertical' and rowIndex + numSpaces > len(ROWS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         if (request.piece_alignment.name == 'horizontal' and colIndex + numSpaces > len(COLUMNS)):
