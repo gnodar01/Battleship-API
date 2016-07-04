@@ -118,19 +118,18 @@ class BattleshipAPI(remote.Service):
         # TODO: raise error if game is already active or over
 
         if request.piece_alignment.name == 'vertical':
-            rows = ROWS[rowIndex:rowIndex + numSpaces]
             columns = COLUMNS[colIndex]
+            rows = ROWS[rowIndex:rowIndex + numSpaces]
         else:
-            rows = ROWS[rowIndex]
             columns = COLUMNS[colIndex:colIndex + numSpaces]
-
+            rows = ROWS[rowIndex]
         coordinates = [(col + row) for col in columns for row in rows]
 
         game = get_by_urlsafe(request.game_key, Game)
         player = User.query(User.name == request.player_name).get()
-
         piece = Piece(game=game.key, player=player.key, coordinates=coordinates)
-        
+        piece.put()
+
         return StringMessage(message=str(piece))
 
 
