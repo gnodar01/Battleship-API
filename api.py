@@ -133,6 +133,7 @@ class BattleshipAPI(remote.Service):
 
         # Errors based on player's previously placed pieces for this game
         gamePlayerPieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
+        placedShips = []
         for placedPiece in gamePlayerPieces:
             # Raise error if the piece has already been placed on the player's board
             if placedPiece.ship == request.piece_type.name:
@@ -141,11 +142,16 @@ class BattleshipAPI(remote.Service):
             for placedCoordinate in placedPiece.coordinates:
                 if placedCoordinate in coordinates:
                     raise endpoints.ConflictException('Your piece intersects with {}'.format(placedCoordinate))
+            placedShips.append(placedPiece.ship)
 
         piece = Piece(game=game.key, player=player.key, ship=request.piece_type.name, coordinates=coordinates)
+        placedShips.append(piece.ship)
         piece.put()
 
-        # TODO: check if all pieces for this player & game have been placed
+        # Check if all pieces for this player & game have been placed
+        if len(placedShips) == len(PIECES):
+            game.pieces_loaded = True
+            game.put()
 
         return StringMessage(message=str(piece))
 
