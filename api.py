@@ -143,7 +143,9 @@ class BattleshipAPI(remote.Service):
                     raise endpoints.ConflictException('Your piece intersects with {}'.format(placedCoordinate))
 
         piece = Piece(game=game.key, player=player.key, ship=request.piece_type.name, coordinates=coordinates)
-        # piece.put()
+        piece.put()
+
+        # TODO: check if all pieces for this player & game have been placed
 
         return StringMessage(message=str(piece))
 
