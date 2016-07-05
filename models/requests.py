@@ -29,5 +29,8 @@ class PlacePieceRequest(messages.Message):
     first_row_coordinate = messages.StringField(5, required=True)
     first_column_coordinate = messages.StringField(6, required=True)
 
+class StrikeRequest(messages.Message):
+    coordinate = messages.StringField(1)
+
 class CoordRequest(messages.Message):
     url_safe_game_key = messages.StringField(1)

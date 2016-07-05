@@ -16,7 +16,7 @@ from protorpc import remote, messages, message_types
 
 from models.nbdModels import User, Game, Piece
 from models.protorpcModels import StringMessage
-from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest, CoordRequest
+from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest, CoordRequest, StrikeRequest
 from utils import get_by_urlsafe
 
 
@@ -161,6 +161,16 @@ class BattleshipAPI(remote.Service):
             game.put()
 
         return StringMessage(message=str(placedShips))
+
+    @endpoints.method(request_message=StrikeRequest,
+                      response_message=StringMessage,
+                      path='game/strike',
+                      name='strike_coordinate',
+                      http_method='POST')
+    def strike_coord(self, request):
+        """Make a move to strike a given coordinate"""
+        
+        return StringMessage(message="")
 
     @endpoints.method(request_message=CoordRequest,
                       response_message=StringMessage,
