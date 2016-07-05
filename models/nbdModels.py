@@ -19,6 +19,7 @@ class Game(ndb.Model):
     player_one_pieces_loaded = ndb.BooleanProperty(required=True, default=False)
     player_two_pieces_loaded = ndb.BooleanProperty(required=True, default=False)
     game_started = ndb.BooleanProperty(required=True, default=False)
+    player_turn = ndb.KeyProperty(required=True)
     game_over = ndb.BooleanProperty(required=True, default=False)
 
 class Piece(ndb.Model):

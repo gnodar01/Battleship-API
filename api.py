@@ -65,12 +65,12 @@ class BattleshipAPI(remote.Service):
         if request.player_two_name:
             # TODO: if playerTwo does not exist throw error
             playerTwo = User.query(User.name == request.player_two_name).get()
-            game = Game(player_one=playerOne.key, player_two=playerTwo.key)
+            game = Game(player_one=playerOne.key, player_turn=playerOne.key, player_two=playerTwo.key)
             print game
             game.put()
             return StringMessage(message='player one is {}, player two is {}'.format(playerOne.name, playerTwo.name))
         else:
-            game = Game(player_one=playerOne.key)
+            game = Game(player_one=playerOne.key, player_turn=playerOne.key)
             print game
             game.put()
             return StringMessage(message='player one is {}'.format(playerOne.name))
