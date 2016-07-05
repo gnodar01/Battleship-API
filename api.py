@@ -16,7 +16,7 @@ from protorpc import remote, messages, message_types
 
 from models.nbdModels import User, Game, Piece
 from models.protorpcModels import StringMessage
-from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest
+from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest, CoordRequest
 from utils import get_by_urlsafe
 
 
@@ -162,6 +162,20 @@ class BattleshipAPI(remote.Service):
 
         return StringMessage(message=str(placedShips))
 
+    # TODO: change request to void and put query in url instead (GET Request)
+    @endpoints.method(request_message=CoordRequest,
+                      response_message=StringMessage,
+                      path='game/get_coords',
+                      name='get_coords',
+                      http_method='GET')
+    def get_coords(self, request):
+        """Get currently populated coordinates in a game by player"""
+        game = get_by_urlsafe(request.game_key, Game)
+        pOnePieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_one).fetch()
+        pOneCoords = [(piece.ship, piece.coordinates) for piece in pOnePieces]
+        pTwoPieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_two).fetch()
+        pTwoCoords = [(piece.ship, piece.coordinates) for piece in pTwoPieces]
+        return StringMessage(message="Player one coordinates: {}; Player two coordinates: {}".format(str(pOneCoords), str(pTwoCoords)))
 
 
 
