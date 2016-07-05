@@ -18,16 +18,16 @@ class NewGameRequest(messages.Message):
     player_two_name = messages.StringField(2)
 
 class JoinGameRequest(messages.Message):
-	game_key = messages.StringField(1, required=True)
-	player_two_name = messages.StringField(2)
+    game_key = messages.StringField(1, required=True)
+    player_two_name = messages.StringField(2)
 
 class PlacePieceRequest(messages.Message):
-	game_key = messages.StringField(1)
-	player_name = messages.StringField(2)
-	piece_type = messages.EnumField(PieceType, 3, required=True) # PieceType can be string
-	piece_alignment = messages.EnumField(Alignment, 4, required=True)
-	first_row_coordinate = messages.StringField(5, required=True)
-	first_column_coordinate = messages.StringField(6, required=True)
+    game_key = messages.StringField(1)
+    player_name = messages.StringField(2)
+    piece_type = messages.EnumField(PieceType, 3, required=True) # PieceType can be string
+    piece_alignment = messages.EnumField(Alignment, 4, required=True)
+    first_row_coordinate = messages.StringField(5, required=True)
+    first_column_coordinate = messages.StringField(6, required=True)
 
 class CoordRequest(messages.Message):
-	game_key = messages.StringField(1)
+    url_safe_game_key = messages.StringField(1)

@@ -162,15 +162,14 @@ class BattleshipAPI(remote.Service):
 
         return StringMessage(message=str(placedShips))
 
-    # TODO: change request to void and put query in url instead (GET Request)
     @endpoints.method(request_message=CoordRequest,
                       response_message=StringMessage,
-                      path='game/get_coords',
+                      path='game/coords/{url_safe_game_key}',
                       name='get_coords',
                       http_method='GET')
     def get_coords(self, request):
         """Get currently populated coordinates in a game by player"""
-        game = get_by_urlsafe(request.game_key, Game)
+        game = get_by_urlsafe(request.url_safe_game_key, Game)
         pOnePieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_one).fetch()
         pOneCoords = [(piece.ship, piece.coordinates) for piece in pOnePieces]
         pTwoPieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_two).fetch()

@@ -12,12 +12,12 @@ class StringMessage(messages.Message):
     message = messages.StringField(1, required=True)
 
 class PieceType(messages.Enum):
-	aircraft_carrier = 1
-	battleship = 2
-	submarine = 3
-	destroyer = 4
-	patrol_ship = 5
+    aircraft_carrier = 1
+    battleship = 2
+    submarine = 3
+    destroyer = 4
+    patrol_ship = 5
 
 class Alignment(messages.Enum):
-	horizontal = 1
-	vertical = 2
+    horizontal = 1
+    vertical = 2
