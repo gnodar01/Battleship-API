@@ -169,8 +169,19 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def strike_coord(self, request):
         """Make a move to strike a given coordinate"""
-        
-        return StringMessage(message="")
+        # TODO: if game started and not game over
+        # TODO: if player turn is not target_player
+        # TODO: develop miss tracker? or all strikes, and remove hit_marks from Piece?
+        game = get_by_urlsafe(request.game_key, Game)
+        targetPlayer = User.query(User.name == request.target_player).get()
+        targetPlayerPieces = Piece.query().filter(Piece.game == game.key, Piece.player == targetPlayer.key).fetch()
+        targetPlayerShipCoords = [piece.coordinates for piece in targetPlayerPieces]
+        for shipCoords in targetPlayerShipCoords:
+            # print shipCoords
+            if request.coordinate in shipCoords:
+                return StringMessage(message="hit")
+        return StringMessage(message="miss")
+
 
     @endpoints.method(request_message=CoordRequest,
                       response_message=StringMessage,

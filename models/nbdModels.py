@@ -30,3 +30,9 @@ class Piece(ndb.Model):
     coordinates = ndb.StringProperty(repeated=True)
     hit_marks = ndb.StringProperty(repeated=True)
     sunk = ndb.BooleanProperty(required=True, default=False)
+
+class Miss(ndb.Model):
+    """Store of all misses"""
+    game = ndb.KeyProperty(required=True, kind='Game')
+    target_player = ndb.KeyProperty(required=True, kind='User')
+    coordinate = ndb.StringProperty(required=True)
