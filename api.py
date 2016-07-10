@@ -170,7 +170,6 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def strike_coord(self, request):
         """Make a move to strike a given coordinate"""
-        # TODO: develop miss tracker? or all strikes, and remove hit_marks from Piece?
         game = get_by_urlsafe(request.game_key, Game)
         if game.game_over == True:
             raise endpoints.ConflictException('This game has already ended')
@@ -206,6 +205,7 @@ class BattleshipAPI(remote.Service):
             if request.coordinate.upper() in piece.coordinates:
                 piece.hit_marks.append(request.coordinate.upper())
                 piece.put()
+                # TODO: check if piece sunk
                 # TODO: check if game_over
                 return StringMessage(message="hit")
 
