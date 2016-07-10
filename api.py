@@ -176,25 +176,40 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('This game has already ended')
         if game.game_started == False:
             raise endpoints.ConflictException('This game has not started yet')
+
         targetPlayer = User.query(User.name == request.target_player).get()
+
         if game.player_turn == targetPlayer.key:
             raise endpoints.ConflictException('It is not this player\'s turn')
-        # TODO: already attempted to hit this coord (check both misses and htis)
+
         targetPlayerPieces = Piece.query().filter(Piece.game == game.key, Piece.player == targetPlayer.key).fetch()
         targetPlayerHitCoords = [piece.hit_marks for piece in targetPlayerPieces]
+
         for hitCoords in targetPlayerHitCoords:
-            if request.coordinates in hitCoords:
+            if request.coordinate.upper() in hitCoords:
                 raise endpoints.ConflictException('This coordinate has already been hit')
-        misse = Miss.query().filter(game == game.key, target_player == targetPlayer.key)
+
+        misses = Miss.query().filter(Miss.game == game.key, Miss.target_player == targetPlayer.key).fetch()
         missCoordinates = [missCoord.coordinate for missCoord in misses]
-        if request.coordinate in missCoordinates:
+
+        if request.coordinate.upper() in missCoordinates:
             raise endpoints.ConflictException('This coordinate has already been struck and missed')
-        targetPlayerShipCoords = [piece.coordinates for piece in targetPlayerPieces]
-        strikeCoord = request.coordinate.upper()
-        for shipCoords in targetPlayerShipCoords:
-            if request.coordinate in shipCoords:
+
+        print game.player_turn
+        if game.player_turn == game.player_one:
+            game.player_turn = game.player_two
+        else:
+            game.player_turn = game.player_one
+        game.put()
+
+        for piece in targetPlayerPieces:
+            if request.coordinate.upper() in piece.coordinates:
+                piece.hit_marks.append(request.coordinate.upper())
+                piece.put()
+                # TODO: check if game_over
                 return StringMessage(message="hit")
-        Miss(game=game.key, target_player=targetPlayer.key, coordinated=strikeCoord).put()
+
+        Miss(game=game.key, target_player=targetPlayer.key, coordinate=request.coordinate.upper()).put()
         return StringMessage(message="miss")
 
 
@@ -205,6 +220,8 @@ class BattleshipAPI(remote.Service):
                       http_method='GET')
     def get_coords(self, request):
         """Get currently populated coordinates in a game by player"""
+        # WARNING  2016-07-10 03:25:55,285 api_config.py:1785] Method battle_ship.get_coords specifies path parameters but you are not using a
+        # ResourceContainer. This will fail in future releases; please switch to using ResourceContainer as soon as possible.
         game = get_by_urlsafe(request.url_safe_game_key, Game)
         pOnePieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_one).fetch()
         pOneCoords = [(piece.ship, piece.coordinates) for piece in pOnePieces]
@@ -224,7 +241,7 @@ class BattleshipAPI(remote.Service):
         players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
         game = get_by_urlsafe(request.game, Game)
         pieces = [piece for piece in PIECES]
-        coordSet = [['a1','a2','a3','a4','a5'],['b1','b2','b3','b4'],['c1', 'c2', 'c3'],['d1','d2','d3'],['e1','e2']]
+        coordSet = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1','E2']]
         for i in range(0,len(PIECES)):
             for player in players:
                 Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coordSet[i]).put()
