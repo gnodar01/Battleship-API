@@ -14,9 +14,10 @@ from protorpc import remote, messages, message_types
 # from google.appengine.api import memcache
 # from google.appengine.api import taskqueue
 
-from models.nbdModels import User, Game, Piece
+from models.nbdModels import User, Game, Piece, Miss
 from models.protorpcModels import StringMessage
-from models.requests import UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest, CoordRequest, StrikeRequest
+from models.requests import (UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest,
+                            CoordRequest, StrikeRequest, PlaceDummyPiecesRequest)
 from utils import get_by_urlsafe
 
 
@@ -178,11 +179,22 @@ class BattleshipAPI(remote.Service):
         targetPlayer = User.query(User.name == request.target_player).get()
         if game.player_turn == targetPlayer.key:
             raise endpoints.ConflictException('It is not this player\'s turn')
+        # TODO: already attempted to hit this coord (check both misses and htis)
         targetPlayerPieces = Piece.query().filter(Piece.game == game.key, Piece.player == targetPlayer.key).fetch()
+        targetPlayerHitCoords = [piece.hit_marks for piece in targetPlayerPieces]
+        for hitCoords in targetPlayerHitCoords:
+            if request.coordinates in hitCoords:
+                raise endpoints.ConflictException('This coordinate has already been hit')
+        misse = Miss.query().filter(game == game.key, target_player == targetPlayer.key)
+        missCoordinates = [missCoord.coordinate for missCoord in misses]
+        if request.coordinate in missCoordinates:
+            raise endpoints.ConflictException('This coordinate has already been struck and missed')
         targetPlayerShipCoords = [piece.coordinates for piece in targetPlayerPieces]
+        strikeCoord = request.coordinate.upper()
         for shipCoords in targetPlayerShipCoords:
             if request.coordinate in shipCoords:
                 return StringMessage(message="hit")
+        Miss(game=game.key, target_player=targetPlayer.key, coordinated=strikeCoord).put()
         return StringMessage(message="miss")
 
 
@@ -200,8 +212,27 @@ class BattleshipAPI(remote.Service):
         pTwoCoords = [(piece.ship, piece.coordinates) for piece in pTwoPieces]
         return StringMessage(message="Player one coordinates: {}; Player two coordinates: {}".format(str(pOneCoords), str(pTwoCoords)))
 
+# - - - temp api to place dummy pices in the datastore - - - - - - - - - - - - - - - - - - - -
 
-
+    @endpoints.method(request_message=PlaceDummyPiecesRequest,
+                      response_message=StringMessage,
+                      path='game/placePieces',
+                      name='place_dummy_pieces',
+                      http_method='GET')
+    def place_dummy_pieces(self, request):
+        """Place dummy pieces"""
+        players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
+        game = get_by_urlsafe(request.game, Game)
+        pieces = [piece for piece in PIECES]
+        coordSet = [['a1','a2','a3','a4','a5'],['b1','b2','b3','b4'],['c1', 'c2', 'c3'],['d1','d2','d3'],['e1','e2']]
+        for i in range(0,len(PIECES)):
+            for player in players:
+                Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coordSet[i]).put()
+        game.game_started = True
+        game.player_one_pieces_loaded = True
+        game.player_two_pieces_loaded = True
+        game.put()
+        return StringMessage(message="donezo")
 
 
 

@@ -36,3 +36,8 @@ class StrikeRequest(messages.Message):
 
 class CoordRequest(messages.Message):
     url_safe_game_key = messages.StringField(1)
+
+class PlaceDummyPiecesRequest(messages.Message):
+    game = messages.StringField(1)
+    player_one = messages.StringField(2)
+    player_two = messages.StringField(3)
