@@ -98,23 +98,20 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Move Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def check_coord_validity(piece_type, piece_alignment, row_coord, col_coord):
+    def _coord_validity_check(row_coord, col_coord):
+        # Raise errors if the row or column coordinates are not valid
         if row_coord not in ROWS:
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         if col_coord not in COLUMNS:
             raise endpoints.ConflictException('Column coordinate must be between A - J')
 
-        num_spaces = PIECES[piece_type]['spaces']
-        row_index = ROWS.index(row_coord)
-        col_index = COLUMNS.index(col_coord)
-
+    def _board_boundaries_check(piece_alignment, num_spaces, row_index, col_index):
         # Raise errors if the peice is being placed outside of the bounds of the board
         if (piece_alignment == 'vertical' and row_index + num_spaces > len(ROWS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         if (piece_alignment == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
 
-        return True
 
     @endpoints.method(request_message=PlacePieceRequest,
                       response_message=StringMessage,
@@ -124,20 +121,22 @@ class BattleshipAPI(remote.Service):
     def place_piece(self, request):
         """Set up a player's board pieces"""
         # Raise errors if the row or column coordinates are not valid
-        if request.first_row_coordinate not in ROWS:
-            raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
-        if request.first_column_coordinate.upper() not in COLUMNS:
-            raise endpoints.ConflictException('Column coordinate must be between A - J')
+        # if request.first_row_coordinate not in ROWS:
+        #     raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
+        # if request.first_column_coordinate.upper() not in COLUMNS:
+        #     raise endpoints.ConflictException('Column coordinate must be between A - J')
+        _coord_validity_check(request.first_row_coordinate, request.first_column_coordinate)
 
         num_spaces = PIECES[request.piece_type.name]['spaces']
         row_index = ROWS.index(request.first_row_coordinate)
         col_index = COLUMNS.index(request.first_column_coordinate.upper())
 
         # Raise errors if the peice is being placed outside of the bounds of the board
-        if (request.piece_alignment.name == 'vertical' and row_index + num_spaces > len(ROWS)):
-            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
-        if (request.piece_alignment.name == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
-            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+        # if (request.piece_alignment.name == 'vertical' and row_index + num_spaces > len(ROWS)):
+        #     raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+        # if (request.piece_alignment.name == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
+        #     raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+        _board_boundaries_check(request.piece_alignment.name, num_spaces, row_index, col_index)
 
         game = get_by_urlsafe(request.game_key, Game)
         player = User.query(User.name == request.player_name).get()
