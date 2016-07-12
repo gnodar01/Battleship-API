@@ -38,6 +38,9 @@ GRID = [(column, row) for column in COLUMNS for row in ROWS]
 class BattleshipAPI(remote.Service):
     """Battle Ship API"""
 
+
+# - - - - User Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     @endpoints.method(request_message=UserRequest,
                       response_message=StringMessage,
                       path='user',
@@ -54,6 +57,8 @@ class BattleshipAPI(remote.Service):
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
 
+# - - - - Game Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     @endpoints.method(request_message=NewGameRequest,
                       response_message=StringMessage,
                       path='game/new',
@@ -61,20 +66,18 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
-        # TODO: if playerOne does not exist return error
-        playerOne = User.query(User.name == request.player_one_name).get()
+        # TODO: if player_one does not exist return error
+        player_one = User.query(User.name == request.player_one_name).get()
         if request.player_two_name:
-            # TODO: if playerTwo does not exist throw error
-            playerTwo = User.query(User.name == request.player_two_name).get()
-            game = Game(player_one=playerOne.key, player_turn=playerOne.key, player_two=playerTwo.key)
-            print game
+            # TODO: if player_two does not exist throw error
+            player_two = User.query(User.name == request.player_two_name).get()
+            game = Game(player_one=player_one.key, player_turn=player_one.key, player_two=player_two.key)
             game.put()
-            return StringMessage(message='player one is {}, player two is {}'.format(playerOne.name, playerTwo.name))
+            return StringMessage(message='player one is {}, player two is {}'.format(player_one.name, player_two.name))
         else:
-            game = Game(player_one=playerOne.key, player_turn=playerOne.key)
-            print game
+            game = Game(player_one=player_one.key, player_turn=player_one.key)
             game.put()
-            return StringMessage(message='player one is {}'.format(playerOne.name))
+            return StringMessage(message='player one is {}'.format(player_one.name))
 
     @endpoints.method(request_message=JoinGameRequest,
                       response_message=StringMessage,
@@ -85,14 +88,33 @@ class BattleshipAPI(remote.Service):
         """Join a game if not already full"""
         game = get_by_urlsafe(request.game_key, Game)
         if game.player_two:
-            raise endpoints.ConflictException(
-                    'This game is already full!')
+            raise endpoints.ConflictException('This game is already full!')
         else:
-            # TODO: if playerTwo does not exist raise error
-            playerTwo = User.query(User.name == request.player_two_name).get()
-            game.player_two = playerTwo.key
+            # TODO: if player_two does not exist raise error
+            player_two = User.query(User.name == request.player_two_name).get()
+            game.player_two = player_two.key
             game.put()
         return StringMessage(message=str(game))
+
+# - - - - Move Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def check_coord_validity(piece_type, piece_alignment, row_coord, col_coord):
+        if row_coord not in ROWS:
+            raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
+        if col_coord not in COLUMNS:
+            raise endpoints.ConflictException('Column coordinate must be between A - J')
+
+        num_spaces = PIECES[piece_type]['spaces']
+        row_index = ROWS.index(row_coord)
+        col_index = COLUMNS.index(col_coord)
+
+        # Raise errors if the peice is being placed outside of the bounds of the board
+        if (piece_alignment == 'vertical' and row_index + num_spaces > len(ROWS)):
+            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+        if (piece_alignment == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
+            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
+
+        return True
 
     @endpoints.method(request_message=PlacePieceRequest,
                       response_message=StringMessage,
@@ -107,14 +129,14 @@ class BattleshipAPI(remote.Service):
         if request.first_column_coordinate.upper() not in COLUMNS:
             raise endpoints.ConflictException('Column coordinate must be between A - J')
 
-        numSpaces = PIECES[request.piece_type.name]['spaces']
-        rowIndex = ROWS.index(request.first_row_coordinate)
-        colIndex = COLUMNS.index(request.first_column_coordinate.upper())
+        num_spaces = PIECES[request.piece_type.name]['spaces']
+        row_index = ROWS.index(request.first_row_coordinate)
+        col_index = COLUMNS.index(request.first_column_coordinate.upper())
 
         # Raise errors if the peice is being placed outside of the bounds of the board
-        if (request.piece_alignment.name == 'vertical' and rowIndex + numSpaces > len(ROWS)):
+        if (request.piece_alignment.name == 'vertical' and row_index + num_spaces > len(ROWS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
-        if (request.piece_alignment.name == 'horizontal' and colIndex + numSpaces > len(COLUMNS)):
+        if (request.piece_alignment.name == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
 
         game = get_by_urlsafe(request.game_key, Game)
@@ -126,32 +148,32 @@ class BattleshipAPI(remote.Service):
 
         # Get all coordinates of the piece based on it's starting coordinates and piece size
         if request.piece_alignment.name == 'vertical':
-            columns = COLUMNS[colIndex]
-            rows = ROWS[rowIndex:rowIndex + numSpaces]
+            columns = COLUMNS[col_index]
+            rows = ROWS[row_index : row_index + num_spaces]
         else:
-            columns = COLUMNS[colIndex:colIndex + numSpaces]
-            rows = ROWS[rowIndex]
+            columns = COLUMNS[col_index : col_index + num_spaces]
+            rows = ROWS[row_index]
         coordinates = [(col + row) for col in columns for row in rows]
 
         # Errors based on player's previously placed pieces for this game
-        gamePlayerPieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
-        placedShips = []
-        for placedPiece in gamePlayerPieces:
+        game_player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
+        placed_ships = []
+        for placed_piece in game_player_pieces:
             # Raise error if the piece has already been placed on the player's board
-            if placedPiece.ship == request.piece_type.name:
+            if placed_piece.ship == request.piece_type.name:
                 raise endpoints.ConflictException('This piece has already been placed for this player')
             # Raise error if piece intersects with any other piece
-            for placedCoordinate in placedPiece.coordinates:
-                if placedCoordinate in coordinates:
-                    raise endpoints.ConflictException('Your piece intersects with {}'.format(placedCoordinate))
-            placedShips.append(placedPiece.ship)
+            for placed_coordinate in placed_piece.coordinates:
+                if placed_coordinate in coordinates:
+                    raise endpoints.ConflictException('Your piece intersects with {}'.format(placed_coordinate))
+            placed_ships.append(placed_piece.ship)
 
         piece = Piece(game=game.key, player=player.key, ship=request.piece_type.name, coordinates=coordinates)
-        placedShips.append(piece.ship)
+        placed_ships.append(piece.ship)
         piece.put()
 
         # Check if all pieces for this player & game have been placed
-        if len(placedShips) == len(PIECES):
+        if len(placed_ships) == len(PIECES):
             if player.key == game.player_one:
                 game.player_one_pieces_loaded = True
             else:
@@ -161,7 +183,7 @@ class BattleshipAPI(remote.Service):
                 game.game_started = True
             game.put()
 
-        return StringMessage(message=str(placedShips))
+        return StringMessage(message=str(placed_ships))
 
     @endpoints.method(request_message=StrikeRequest,
                       response_message=StringMessage,
@@ -176,22 +198,22 @@ class BattleshipAPI(remote.Service):
         if game.game_started == False:
             raise endpoints.ConflictException('This game has not started yet')
 
-        targetPlayer = User.query(User.name == request.target_player).get()
+        target_player = User.query(User.name == request.target_player).get()
 
-        if game.player_turn == targetPlayer.key:
+        if game.player_turn == target_player.key:
             raise endpoints.ConflictException('It is not this player\'s turn')
 
-        targetPlayerPieces = Piece.query().filter(Piece.game == game.key, Piece.player == targetPlayer.key).fetch()
-        targetPlayerHitCoords = [piece.hit_marks for piece in targetPlayerPieces]
+        target_player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == target_player.key).fetch()
+        target_player_hit_coords = [piece.hit_marks for piece in target_player_pieces]
 
-        for hitCoords in targetPlayerHitCoords:
+        for hitCoords in target_player_hit_coords:
             if request.coordinate.upper() in hitCoords:
                 raise endpoints.ConflictException('This coordinate has already been hit')
 
-        misses = Miss.query().filter(Miss.game == game.key, Miss.target_player == targetPlayer.key).fetch()
-        missCoordinates = [missCoord.coordinate for missCoord in misses]
+        misses = Miss.query().filter(Miss.game == game.key, Miss.target_player == target_player.key).fetch()
+        miss_coordinates = [missCoord.coordinate for missCoord in misses]
 
-        if request.coordinate.upper() in missCoordinates:
+        if request.coordinate.upper() in miss_coordinates:
             raise endpoints.ConflictException('This coordinate has already been struck and missed')
 
         print game.player_turn
@@ -201,7 +223,7 @@ class BattleshipAPI(remote.Service):
             game.player_turn = game.player_one
         game.put()
 
-        for piece in targetPlayerPieces:
+        for piece in target_player_pieces:
             if request.coordinate.upper() in piece.coordinates:
                 piece.hit_marks.append(request.coordinate.upper())
                 piece.put()
@@ -209,9 +231,10 @@ class BattleshipAPI(remote.Service):
                 # TODO: check if game_over
                 return StringMessage(message="hit")
 
-        Miss(game=game.key, target_player=targetPlayer.key, coordinate=request.coordinate.upper()).put()
+        Miss(game=game.key, target_player=target_player.key, coordinate=request.coordinate.upper()).put()
         return StringMessage(message="miss")
 
+# - - - - Info Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=CoordRequest,
                       response_message=StringMessage,
@@ -223,13 +246,13 @@ class BattleshipAPI(remote.Service):
         # WARNING  2016-07-10 03:25:55,285 api_config.py:1785] Method battle_ship.get_coords specifies path parameters but you are not using a
         # ResourceContainer. This will fail in future releases; please switch to using ResourceContainer as soon as possible.
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        pOnePieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_one).fetch()
-        pOneCoords = [(piece.ship, piece.coordinates) for piece in pOnePieces]
-        pTwoPieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_two).fetch()
-        pTwoCoords = [(piece.ship, piece.coordinates) for piece in pTwoPieces]
-        return StringMessage(message="Player one coordinates: {}; Player two coordinates: {}".format(str(pOneCoords), str(pTwoCoords)))
+        p_one_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_one).fetch()
+        p_one_coords = [(piece.ship, piece.coordinates) for piece in p_one_pieces]
+        p_two_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_two).fetch()
+        p_two_coords = [(piece.ship, piece.coordinates) for piece in p_two_pieces]
+        return StringMessage(message="Player one coordinates: {}; Player two coordinates: {}".format(str(p_one_coords), str(p_two_coords)))
 
-# - - - temp api to place dummy pices in the datastore - - - - - - - - - - - - - - - - - - - -
+# - - - temp api to place dummy pices in the datastore - - - - - - - - - - - -
 
     @endpoints.method(request_message=PlaceDummyPiecesRequest,
                       response_message=StringMessage,
@@ -241,10 +264,10 @@ class BattleshipAPI(remote.Service):
         players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
         game = get_by_urlsafe(request.game, Game)
         pieces = [piece for piece in PIECES]
-        coordSet = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1','E2']]
+        coord_set = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1','E2']]
         for i in range(0,len(PIECES)):
             for player in players:
-                Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coordSet[i]).put()
+                Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coord_set[i]).put()
         game.game_started = True
         game.player_one_pieces_loaded = True
         game.player_two_pieces_loaded = True
