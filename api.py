@@ -99,19 +99,28 @@ class BattleshipAPI(remote.Service):
 # - - - - Move Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _coord_validity_check(row_coord, col_coord):
-        # Raise errors if the row or column coordinates are not valid
+        """Raise errors if the row or column coordinates are not valid"""
         if row_coord not in ROWS:
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         if col_coord not in COLUMNS:
             raise endpoints.ConflictException('Column coordinate must be between A - J')
 
     def _board_boundaries_check(piece_alignment, num_spaces, row_index, col_index):
-        # Raise errors if the peice is being placed outside of the bounds of the board
+        """Raise errors if the peice is being placed outside of the bounds of the board"""
         if (piece_alignment == 'vertical' and row_index + num_spaces > len(ROWS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         if (piece_alignment == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
 
+    def _all_coords(piece_alignment, num_spaces, row_index, col_index):
+        """Get all coordinates of the piece based on it's starting coordinates and piece size"""
+        if request.piece_alignment.name == 'vertical':
+            columns = COLUMNS[col_index]
+            rows = ROWS[row_index : row_index + num_spaces]
+        else:
+            columns = COLUMNS[col_index : col_index + num_spaces]
+            rows = ROWS[row_index]
+        return [(col + row) for col in columns for row in rows]
 
     @endpoints.method(request_message=PlacePieceRequest,
                       response_message=StringMessage,
@@ -146,13 +155,14 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('All of the pieces for this game have already been placed')
 
         # Get all coordinates of the piece based on it's starting coordinates and piece size
-        if request.piece_alignment.name == 'vertical':
-            columns = COLUMNS[col_index]
-            rows = ROWS[row_index : row_index + num_spaces]
-        else:
-            columns = COLUMNS[col_index : col_index + num_spaces]
-            rows = ROWS[row_index]
-        coordinates = [(col + row) for col in columns for row in rows]
+        # if request.piece_alignment.name == 'vertical':
+        #     columns = COLUMNS[col_index]
+        #     rows = ROWS[row_index : row_index + num_spaces]
+        # else:
+        #     columns = COLUMNS[col_index : col_index + num_spaces]
+        #     rows = ROWS[row_index]
+        # coordinates = [(col + row) for col in columns for row in rows]
+        coordinates = _all_coords(request.piece_alignment.name, num_spaces, row_index, col_index)
 
         # Errors based on player's previously placed pieces for this game
         game_player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
