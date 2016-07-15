@@ -134,8 +134,6 @@ class BattleshipAPI(remote.Service):
         #     raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         # if request.first_column_coordinate.upper() not in COLUMNS:
         #     raise endpoints.ConflictException('Column coordinate must be between A - J')
-        print request.first_row_coordinate
-        print request.first_column_coordinate
         self._coord_validity_check(request.first_row_coordinate, request.first_column_coordinate.upper())
 
         num_spaces = PIECES[request.piece_type.name]['spaces']
@@ -153,8 +151,8 @@ class BattleshipAPI(remote.Service):
         player = User.query(User.name == request.player_name).get()
 
         # Raise error if all of the pieces for this player and this game have been placed already
-        # if game.game_started:
-        #     raise endpoints.ConflictException('All of the pieces for this game have already been placed')
+        if game.game_started:
+            raise endpoints.ConflictException('All of the pieces for this game have already been placed')
 
         # Get all coordinates of the piece based on it's starting coordinates and piece size
         # if request.piece_alignment.name == 'vertical':
@@ -168,9 +166,6 @@ class BattleshipAPI(remote.Service):
 
         # Errors based on player's previously placed pieces for this game
         player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
-        print player_pieces
-        # TODO: get rid of placed_ships array, and push to player_pieces instead; functionally the same thing
-        placed_ships = []
         for placed_piece in player_pieces:
             # Raise error if the piece has already been placed on the player's board
             if placed_piece.ship == request.piece_type.name:
@@ -179,14 +174,13 @@ class BattleshipAPI(remote.Service):
             for placed_coordinate in placed_piece.coordinates:
                 if placed_coordinate in coordinates:
                     raise endpoints.ConflictException('Your piece intersects with {}'.format(placed_coordinate))
-            placed_ships.append(placed_piece.ship)
 
         piece = Piece(game=game.key, player=player.key, ship=request.piece_type.name, coordinates=coordinates)
-        placed_ships.append(piece.ship)
+        player_pieces.append(piece)
         piece.put()
 
         # Check if all pieces for this player & game have been placed
-        if len(placed_ships) == len(PIECES):
+        if len(player_pieces) == len(PIECES):
             if player.key == game.player_one:
                 game.player_one_pieces_loaded = True
             else:
@@ -196,7 +190,7 @@ class BattleshipAPI(remote.Service):
                 game.game_started = True
             game.put()
 
-        return StringMessage(message=str(placed_ships))
+        return StringMessage(message=str([piece.ship for piece in player_pieces]))
 
     @endpoints.method(request_message=StrikeRequest,
                       response_message=StringMessage,
