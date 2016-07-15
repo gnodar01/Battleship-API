@@ -98,21 +98,21 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Move Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _coord_validity_check(row_coord, col_coord):
+    def _coord_validity_check(self, row_coord, col_coord):
         """Raise errors if the row or column coordinates are not valid"""
         if row_coord not in ROWS:
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         if col_coord not in COLUMNS:
             raise endpoints.ConflictException('Column coordinate must be between A - J')
 
-    def _board_boundaries_check(piece_alignment, num_spaces, row_index, col_index):
+    def _board_boundaries_check(self, piece_alignment, num_spaces, row_index, col_index):
         """Raise errors if the peice is being placed outside of the bounds of the board"""
         if (piece_alignment == 'vertical' and row_index + num_spaces > len(ROWS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         if (piece_alignment == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
 
-    def _all_coords(piece_alignment, num_spaces, row_index, col_index):
+    def _all_coords(self, piece_alignment, num_spaces, row_index, col_index):
         """Get all coordinates of the piece based on it's starting coordinates and piece size"""
         if request.piece_alignment.name == 'vertical':
             columns = COLUMNS[col_index]
@@ -134,7 +134,9 @@ class BattleshipAPI(remote.Service):
         #     raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
         # if request.first_column_coordinate.upper() not in COLUMNS:
         #     raise endpoints.ConflictException('Column coordinate must be between A - J')
-        _coord_validity_check(request.first_row_coordinate, request.first_column_coordinate)
+        print request.first_row_coordinate
+        print request.first_column_coordinate
+        self._coord_validity_check(request.first_row_coordinate, request.first_column_coordinate.upper())
 
         num_spaces = PIECES[request.piece_type.name]['spaces']
         row_index = ROWS.index(request.first_row_coordinate)
@@ -145,7 +147,7 @@ class BattleshipAPI(remote.Service):
         #     raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
         # if (request.piece_alignment.name == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
         #     raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
-        _board_boundaries_check(request.piece_alignment.name, num_spaces, row_index, col_index)
+        self._board_boundaries_check(request.piece_alignment.name, num_spaces, row_index, col_index)
 
         game = get_by_urlsafe(request.game_key, Game)
         player = User.query(User.name == request.player_name).get()
@@ -162,12 +164,13 @@ class BattleshipAPI(remote.Service):
         #     columns = COLUMNS[col_index : col_index + num_spaces]
         #     rows = ROWS[row_index]
         # coordinates = [(col + row) for col in columns for row in rows]
-        coordinates = _all_coords(request.piece_alignment.name, num_spaces, row_index, col_index)
+        coordinates = self._all_coords(request.piece_alignment.name, num_spaces, row_index, col_index)
 
         # Errors based on player's previously placed pieces for this game
-        game_player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
+        player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
+        print player_pieces
         placed_ships = []
-        for placed_piece in game_player_pieces:
+        for placed_piece in player_pieces:
             # Raise error if the piece has already been placed on the player's board
             if placed_piece.ship == request.piece_type.name:
                 raise endpoints.ConflictException('This piece has already been placed for this player')
