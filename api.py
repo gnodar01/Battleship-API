@@ -169,6 +169,7 @@ class BattleshipAPI(remote.Service):
         # Errors based on player's previously placed pieces for this game
         player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
         print player_pieces
+        # TODO: get rid of placed_ships array, and push to player_pieces instead; functionally the same thing
         placed_ships = []
         for placed_piece in player_pieces:
             # Raise error if the piece has already been placed on the player's board
