@@ -114,7 +114,7 @@ class BattleshipAPI(remote.Service):
 
     def _all_coords(self, piece_alignment, num_spaces, row_index, col_index):
         """Get all coordinates of the piece based on it's starting coordinates and piece size"""
-        if request.piece_alignment.name == 'vertical':
+        if piece_alignment == 'vertical':
             columns = COLUMNS[col_index]
             rows = ROWS[row_index : row_index + num_spaces]
         else:
@@ -153,8 +153,8 @@ class BattleshipAPI(remote.Service):
         player = User.query(User.name == request.player_name).get()
 
         # Raise error if all of the pieces for this player and this game have been placed already
-        if game.game_started:
-            raise endpoints.ConflictException('All of the pieces for this game have already been placed')
+        # if game.game_started:
+        #     raise endpoints.ConflictException('All of the pieces for this game have already been placed')
 
         # Get all coordinates of the piece based on it's starting coordinates and piece size
         # if request.piece_alignment.name == 'vertical':
