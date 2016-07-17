@@ -42,7 +42,7 @@ class BattleshipAPI(remote.Service):
 
     @endpoints.method(request_message=UserRequest,
                       response_message=StringMessage,
-                      path='user',
+                      path='user/new',
                       name='user.create_user',
                       http_method='POST')
     def create_user(self, request):
