@@ -21,6 +21,8 @@ from models.requests import (UserRequest, NewGameRequest, JoinGameRequest, Place
 from utils import get_by_urlsafe
 
 
+
+
 PIECES = {
     'aircraft_carrier': {'name': 'Aircraft Carrier', 'spaces': 5},
     'battleship': {'name': 'Battleship', 'spaces': 4},
@@ -41,7 +43,7 @@ class BattleshipAPI(remote.Service):
     @endpoints.method(request_message=UserRequest,
                       response_message=StringMessage,
                       path='user',
-                      name='create_user',
+                      name='user.create_user',
                       http_method='POST')
     def create_user(self, request):
         """Create a User. Requires a unique username"""
@@ -57,7 +59,7 @@ class BattleshipAPI(remote.Service):
     @endpoints.method(request_message=NewGameRequest,
                       response_message=StringMessage,
                       path='game/new',
-                      name='create_game',
+                      name='game.create_game',
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
@@ -79,7 +81,7 @@ class BattleshipAPI(remote.Service):
     @endpoints.method(request_message=JoinGameRequest,
                       response_message=StringMessage,
                       path='game/join',
-                      name='join_game',
+                      name='game.join_game',
                       http_method='POST')
     def join_game(self, request):
         """Join a game if not already full"""
@@ -96,8 +98,8 @@ class BattleshipAPI(remote.Service):
 
     @endpoints.method(request_message=PlacePieceRequest,
                       response_message=StringMessage,
-                      path='game/setup/place_piece',
-                      name='place_piece',
+                      path='game/place_piece',
+                      name='game.place_piece',
                       http_method='POST')
     def place_piece(self, request):
         """Set up a player's board pieces"""
@@ -166,7 +168,7 @@ class BattleshipAPI(remote.Service):
     @endpoints.method(request_message=StrikeRequest,
                       response_message=StringMessage,
                       path='game/strike',
-                      name='strike_coordinate',
+                      name='game.strike_coordinate',
                       http_method='POST')
     def strike_coord(self, request):
         """Make a move to strike a given coordinate"""
@@ -216,7 +218,7 @@ class BattleshipAPI(remote.Service):
     @endpoints.method(request_message=CoordRequest,
                       response_message=StringMessage,
                       path='game/coords/{url_safe_game_key}',
-                      name='get_coords',
+                      name='game.get_coords',
                       http_method='GET')
     def get_coords(self, request):
         """Get currently populated coordinates in a game by player"""
@@ -234,7 +236,7 @@ class BattleshipAPI(remote.Service):
     @endpoints.method(request_message=PlaceDummyPiecesRequest,
                       response_message=StringMessage,
                       path='game/placePieces',
-                      name='place_dummy_pieces',
+                      name='game.place_dummy_pieces',
                       http_method='GET')
     def place_dummy_pieces(self, request):
         """Place dummy pieces"""
