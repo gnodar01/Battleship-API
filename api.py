@@ -34,10 +34,10 @@ ROWS = ['1','2','3','4','5','6','7','8','9','10']
 GRID = [(column, row) for column in COLUMNS for row in ROWS]
 
 
+# TODO: Authentication for each of the methods
 @endpoints.api(name='battle_ship', version='v1')
 class BattleshipAPI(remote.Service):
     """Battle Ship API"""
-
 
 # - - - - User Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -213,6 +213,7 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('This game has not started yet')
 
         # Player who's board is being attacked
+        # TODO: Raise error if this player does not exist
         target_player = User.query(User.name == request.target_player).get()
 
         if game.player_turn == target_player.key:
@@ -252,7 +253,6 @@ class BattleshipAPI(remote.Service):
         Miss(game=game.key, target_player=target_player.key, coordinate=request.coordinate.upper()).put()
         return StringMessage(message="miss")
 
-
 # - - - - Info Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=COORD_REQUEST,
@@ -278,6 +278,9 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def place_dummy_pieces(self, request):
         """Place dummy pieces"""
+        # TODO: Check if game exists
+        # TODO: If player one or player two does not exist, raise error
+        # TODO: Check that game has no pieces laid
         players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
         game = get_by_urlsafe(request.url_safe_game_key, Game)
         pieces = [piece for piece in PIECES]
