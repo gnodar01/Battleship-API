@@ -17,27 +17,41 @@ class NewGameRequest(messages.Message):
     player_one_name = messages.StringField(1, required=True)
     player_two_name = messages.StringField(2)
 
-class JoinGameRequest(messages.Message):
-    game_key = messages.StringField(1, required=True)
-    player_two_name = messages.StringField(2)
+class JoinGameForm(messages.Message):
+    # 
+    player_two_name = messages.StringField(1)
 
-class PlacePieceRequest(messages.Message):
-    game_key = messages.StringField(1)
-    player_name = messages.StringField(2)
-    piece_type = messages.EnumField(PieceType, 3, required=True) # PieceType can be string
-    piece_alignment = messages.EnumField(Alignment, 4, required=True)
-    first_row_coordinate = messages.StringField(5, required=True)
-    first_column_coordinate = messages.StringField(6, required=True)
+class PlacePieceForm(messages.Message):
+    player_name = messages.StringField(1)
+    piece_type = messages.EnumField(PieceType, 2, required=True) # PieceType can be string
+    piece_alignment = messages.EnumField(Alignment, 3, required=True)
+    first_row_coordinate = messages.StringField(4, required=True)
+    first_column_coordinate = messages.StringField(5, required=True)
 
-class StrikeRequest(messages.Message):
-    game_key = messages.StringField(1)
-    target_player = messages.StringField(2)
-    coordinate = messages.StringField(3)
+class StrikeForm(messages.Message):
+    target_player = messages.StringField(1)
+    coordinate = messages.StringField(2)
 
-class CoordRequest(messages.Message):
-    url_safe_game_key = messages.StringField(1)
+class PlaceDummyPiecesForm(messages.Message):
+    player_one = messages.StringField(1)
+    player_two = messages.StringField(2)
 
-class PlaceDummyPiecesRequest(messages.Message):
-    game = messages.StringField(1)
-    player_one = messages.StringField(2)
-    player_two = messages.StringField(3)
+JOIN_GAME_REQUEST = endpoints.ResourceContainer(
+    JoinGameForm,
+    url_safe_game_key = messages.StringField(2, required=True))
+
+PLACE_PIECE_REQUEST = endpoints.ResourceContainer(
+    PlacePieceForm,
+    url_safe_game_key = messages.StringField(6, required=True))
+
+STRIKE_REQUEST = endpoints.ResourceContainer(
+    StrikeForm,
+    url_safe_game_key = messages.StringField(3, required=True))
+
+COORD_REQUEST = endpoints.ResourceContainer(
+    # 
+    url_safe_game_key = messages.StringField(1, required=True))
+
+PLACE_DUMMY_PIECES_REQUEST = endpoints.ResourceContainer(
+    PlaceDummyPiecesForm,
+    url_safe_game_key = messages.StringField(3))
