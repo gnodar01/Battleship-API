@@ -16,11 +16,9 @@ from protorpc import remote, messages, message_types
 
 from models.nbdModels import User, Game, Piece, Miss
 from models.protorpcModels import StringMessage
-from models.requests import (UserRequest, NewGameRequest, JoinGameRequest, PlacePieceRequest,
-                            CoordRequest, StrikeRequest, PlaceDummyPiecesRequest)
+from models.requests import (UserRequest, NewGameRequest, JOIN_GAME_REQUEST, PLACE_PIECE_REQUEST,
+                             STRIKE_REQUEST, COORD_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
 from utils import get_by_urlsafe
-
-
 
 
 PIECES = {
@@ -78,14 +76,14 @@ class BattleshipAPI(remote.Service):
             game.put()
             return StringMessage(message='player one is {}'.format(playerOne.name))
 
-    @endpoints.method(request_message=JoinGameRequest,
+    @endpoints.method(request_message=JOIN_GAME_REQUEST,
                       response_message=StringMessage,
-                      path='game/join',
+                      path='game/join/{url_safe_game_key}',
                       name='game.join_game',
                       http_method='POST')
     def join_game(self, request):
         """Join a game if not already full"""
-        game = get_by_urlsafe(request.game_key, Game)
+        game = get_by_urlsafe(request.url_safe_game_key, Game)
         if game.player_two:
             raise endpoints.ConflictException(
                     'This game is already full!')
@@ -96,9 +94,9 @@ class BattleshipAPI(remote.Service):
             game.put()
         return StringMessage(message=str(game))
 
-    @endpoints.method(request_message=PlacePieceRequest,
+    @endpoints.method(request_message=PLACE_PIECE_REQUEST,
                       response_message=StringMessage,
-                      path='game/place_piece',
+                      path='game/place_piece/{url_safe_game_key}',
                       name='game.place_piece',
                       http_method='POST')
     def place_piece(self, request):
@@ -119,7 +117,7 @@ class BattleshipAPI(remote.Service):
         if (request.piece_alignment.name == 'horizontal' and colIndex + numSpaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
 
-        game = get_by_urlsafe(request.game_key, Game)
+        game = get_by_urlsafe(request.url_safe_game_key, Game)
         player = User.query(User.name == request.player_name).get()
 
         # Raise error if all of the pieces for this player and this game have been placed already
@@ -165,14 +163,14 @@ class BattleshipAPI(remote.Service):
 
         return StringMessage(message=str(placedShips))
 
-    @endpoints.method(request_message=StrikeRequest,
+    @endpoints.method(request_message=STRIKE_REQUEST,
                       response_message=StringMessage,
-                      path='game/strike',
+                      path='game/strike/{url_safe_game_key}',
                       name='game.strike_coordinate',
                       http_method='POST')
     def strike_coord(self, request):
         """Make a move to strike a given coordinate"""
-        game = get_by_urlsafe(request.game_key, Game)
+        game = get_by_urlsafe(request.url_safe_game_key, Game)
         if game.game_over == True:
             raise endpoints.ConflictException('This game has already ended')
         if game.game_started == False:
@@ -214,8 +212,7 @@ class BattleshipAPI(remote.Service):
         Miss(game=game.key, target_player=targetPlayer.key, coordinate=request.coordinate.upper()).put()
         return StringMessage(message="miss")
 
-
-    @endpoints.method(request_message=CoordRequest,
+    @endpoints.method(request_message=COORD_REQUEST,
                       response_message=StringMessage,
                       path='game/coords/{url_safe_game_key}',
                       name='game.get_coords',
@@ -233,15 +230,15 @@ class BattleshipAPI(remote.Service):
 
 # - - - temp api to place dummy pices in the datastore - - - - - - - - - - - - - - - - - - - -
 
-    @endpoints.method(request_message=PlaceDummyPiecesRequest,
+    @endpoints.method(request_message=PLACE_DUMMY_PIECES_REQUEST,
                       response_message=StringMessage,
-                      path='game/placePieces',
+                      path='game/place_pieces/{url_safe_game_key}',
                       name='game.place_dummy_pieces',
-                      http_method='GET')
+                      http_method='POST')
     def place_dummy_pieces(self, request):
         """Place dummy pieces"""
         players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
-        game = get_by_urlsafe(request.game, Game)
+        game = get_by_urlsafe(request.url_safe_game_key, Game)
         pieces = [piece for piece in PIECES]
         coordSet = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1','E2']]
         for i in range(0,len(PIECES)):
