@@ -39,7 +39,7 @@ GRID = [(column, row) for column in COLUMNS for row in ROWS]
 class BattleshipAPI(remote.Service):
     """Battle Ship API"""
 
-# - - - - User Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - - - - User Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=UserRequest,
                       response_message=StringMessage,
@@ -57,7 +57,7 @@ class BattleshipAPI(remote.Service):
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
 
-# - - - - Game Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - - - - Game Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=NewGameRequest,
                       response_message=StringMessage,
@@ -96,7 +96,7 @@ class BattleshipAPI(remote.Service):
             game.put()
         return StringMessage(message=str(game))
 
-# - - - - Move Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _coord_validity_check(self, row_coord, col_coord):
         """Raise errors if the row or column coordinates are not valid"""
@@ -121,13 +121,6 @@ class BattleshipAPI(remote.Service):
             columns = COLUMNS[col_index : col_index + num_spaces]
             rows = ROWS[row_index]
         return [(col + row) for col in columns for row in rows]
-
-    def _change_player_turn(self, game):
-        if game.player_turn == game.player_one:
-            game.player_turn = game.player_two
-        else:
-            game.player_turn = game.player_one
-        game.put()
 
     @endpoints.method(request_message=PLACE_PIECE_REQUEST,
                       response_message=StringMessage,
@@ -199,6 +192,31 @@ class BattleshipAPI(remote.Service):
 
         return StringMessage(message=str([piece.ship for piece in player_pieces]))
 
+# - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def _change_player_turn(self, game):
+        if game.player_turn == game.player_one:
+            game.player_turn = game.player_two
+        else:
+            game.player_turn = game.player_one
+        game.put()
+
+    def _game_status(self, game, target_player):
+        target_player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == target_player.key).fetch()
+        for piece in target_player_pieces:
+            if piece.sunk == False:
+                return game.game_over
+        game.game_over = True
+        game.put()
+        return game.game_over
+
+    def _piece_status(self, piece):
+        if sorted(piece.coordinates) == sorted(piece.hit_marks):
+            piece.sunk = True
+            piece.put()
+            return piece.sunk
+        return piece.sunk
+
     @endpoints.method(request_message=STRIKE_REQUEST,
                       response_message=StringMessage,
                       path='game/strike/{url_safe_game_key}',
@@ -247,14 +265,20 @@ class BattleshipAPI(remote.Service):
                 piece.hit_marks.append(request.coordinate.upper())
                 piece.put()
                 # TODO: check if piece sunk
-                # return _piece_status(piece)
+                piece_sunk = self._piece_status(piece)
                 # TODO: check if game_over
-                return StringMessage(message="hit")
+                game_over = self._game_status(game, target_player)
+                if game_over:
+                    return StringMessage(message="{} sunk, game over!".format(piece.ship))
+                elif piece_sunk:
+                    return StringMessage(message="{} sunk!".format(piece.ship))
+                else:
+                    return StringMessage(message="Hit {}!".format(piece.ship))
 
         Miss(game=game.key, target_player=target_player.key, coordinate=request.coordinate.upper()).put()
         return StringMessage(message="miss")
 
-# - - - - Info Methods - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=COORD_REQUEST,
                       response_message=StringMessage,
@@ -270,7 +294,7 @@ class BattleshipAPI(remote.Service):
         p_two_coords = [(piece.ship, piece.coordinates) for piece in p_two_pieces]
         return StringMessage(message="Player one coordinates: {}; Player two coordinates: {}".format(str(p_one_coords), str(p_two_coords)))
 
-# - - - temp api to place dummy pices in the datastore - - - - - - - - - - - -
+# - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 
     @endpoints.method(request_message=PLACE_DUMMY_PIECES_REQUEST,
                       response_message=StringMessage,
