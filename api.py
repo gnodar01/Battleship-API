@@ -210,7 +210,7 @@ class BattleshipAPI(remote.Service):
         if game.game_over == True:
             raise endpoints.ConflictException('This game has already ended')
         if game.game_started == False:
-            raise endpoints.ConflictException('This game has not started yet')
+            raise endpoints.ConflictException('This game has not started yet, all the pieces must first be loaded by both players')
 
         # Player who's board is being attacked
         # TODO: Raise error if this player does not exist
@@ -247,6 +247,7 @@ class BattleshipAPI(remote.Service):
                 piece.hit_marks.append(request.coordinate.upper())
                 piece.put()
                 # TODO: check if piece sunk
+                # return _piece_status(piece)
                 # TODO: check if game_over
                 return StringMessage(message="hit")
 
