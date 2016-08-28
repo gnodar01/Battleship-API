@@ -15,9 +15,9 @@ from protorpc import remote, messages, message_types
 # from google.appengine.api import taskqueue
 
 from models.nbdModels import User, Game, Piece, Miss
-from models.protorpcModels import StringMessage
+from models.protorpcModels import StringMessage, GameStatusMessage
 from models.requests import (UserRequest, NewGameRequest, JOIN_GAME_REQUEST, PLACE_PIECE_REQUEST,
-                             STRIKE_REQUEST, COORD_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
+                             STRIKE_REQUEST, GAME_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
 from utils import get_by_urlsafe
 
 
@@ -282,7 +282,18 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    @endpoints.method(request_message=COORD_REQUEST,
+    def _copy_game_to_form(self, game_obj):
+        game_form = GameStatusMessage()
+        for field in game_form.all_fields():
+            if field.name == "player_one" or field.name == "player_two" or field.name == "player_turn":
+                player_key = getattr(game_obj, field.name)
+                player = player_key.get()
+                setattr(game_form, field.name, player.name)
+            elif hasattr(game_obj, field.name):
+                setattr(game_form, field.name, str(getattr(game_obj, field.name)))
+        return game_form
+
+    @endpoints.method(request_message=GAME_REQUEST,
                       response_message=StringMessage,
                       path='game/coords/{url_safe_game_key}',
                       name='game.get_coords',
@@ -295,6 +306,17 @@ class BattleshipAPI(remote.Service):
         p_two_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_two).fetch()
         p_two_coords = [(piece.ship, piece.coordinates) for piece in p_two_pieces]
         return StringMessage(message="Player one coordinates: {}; Player two coordinates: {}".format(str(p_one_coords), str(p_two_coords)))
+
+    @endpoints.method(request_message=GAME_REQUEST,
+                      response_message=GameStatusMessage,
+                      path='game/status/{url_safe_game_key}',
+                      name='game.get_game_status',
+                      http_method='GET')
+    def get_game_status(self, request):
+        """Get a game's current status"""
+        game = get_by_urlsafe(request.url_safe_game_key, Game)
+        print game
+        return self._copy_game_to_form(game)
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 
@@ -320,6 +342,7 @@ class BattleshipAPI(remote.Service):
         game.player_two_pieces_loaded = True
         game.put()
         return StringMessage(message="donezo")
+# Game(key=Key('Game', 6614661952700416), game_over=True, game_started=True, player_one=Key('User', 5066549580791808), player_one_pieces_loaded=True, player_turn=Key('User', 6192449487634432), player_two=Key('User', 6192449487634432), player_two_pieces_loaded=True)
 
 
 

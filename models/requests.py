@@ -36,6 +36,10 @@ class PlaceDummyPiecesForm(messages.Message):
     player_one = messages.StringField(1)
     player_two = messages.StringField(2)
 
+GAME_REQUEST = endpoints.ResourceContainer(
+    # 
+    url_safe_game_key = messages.StringField(1, required=True))
+
 JOIN_GAME_REQUEST = endpoints.ResourceContainer(
     JoinGameForm,
     url_safe_game_key = messages.StringField(2, required=True))
@@ -48,10 +52,7 @@ STRIKE_REQUEST = endpoints.ResourceContainer(
     StrikeForm,
     url_safe_game_key = messages.StringField(3, required=True))
 
-COORD_REQUEST = endpoints.ResourceContainer(
-    # 
-    url_safe_game_key = messages.StringField(1, required=True))
-
 PLACE_DUMMY_PIECES_REQUEST = endpoints.ResourceContainer(
     PlaceDummyPiecesForm,
     url_safe_game_key = messages.StringField(3))
+
