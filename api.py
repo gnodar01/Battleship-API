@@ -91,6 +91,7 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('This game is already full!')
         else:
             # TODO: if player_two does not exist raise error
+            # TODO: player two cannot equal player one
             player_two = User.query(User.name == request.player_two_name).get()
             game.player_two = player_two.key
             game.put()
@@ -253,6 +254,7 @@ class BattleshipAPI(remote.Service):
         if request.coordinate.upper() in miss_coordinates:
             raise endpoints.ConflictException('This coordinate has already been struck and missed')
 
+        # Change it to the other player's turn
         if game.player_turn == game.player_one:
             game.player_turn = game.player_two
         else:
@@ -264,9 +266,9 @@ class BattleshipAPI(remote.Service):
             if request.coordinate.upper() in piece.coordinates:
                 piece.hit_marks.append(request.coordinate.upper())
                 piece.put()
-                # TODO: check if piece sunk
+                # check if piece sunk
                 piece_sunk = self._piece_status(piece)
-                # TODO: check if game_over
+                # check if game_over
                 game_over = self._game_status(game, target_player)
                 if game_over:
                     return StringMessage(message="{} sunk, game over!".format(piece.ship))
