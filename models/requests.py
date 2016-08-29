@@ -8,7 +8,6 @@ from datetime import date
 from protorpc import messages, message_types
 from models.protorpcModels import PieceType, Alignment
 
-
 class UserRequest(messages.Message):
     user_name = messages.StringField(1, required=True)
     email = messages.StringField(2, required=True)
@@ -55,4 +54,7 @@ STRIKE_REQUEST = endpoints.ResourceContainer(
 PLACE_DUMMY_PIECES_REQUEST = endpoints.ResourceContainer(
     PlaceDummyPiecesForm,
     url_safe_game_key = messages.StringField(3))
+
+USER_GAMES_REQUEST = endpoints.ResourceContainer(
+    user_name = messages.StringField(1, required=True))
 
