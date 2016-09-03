@@ -16,7 +16,7 @@ from protorpc import remote, messages, message_types
 # from google.appengine.api import taskqueue
 
 from models.nbdModels import User, Game, Piece, Miss
-from models.protorpcModels import StringMessage, GameStatusMessage
+from models.protorpcModels import StringMessage, GameStatusMessage, UserGames
 from models.requests import (UserRequest, NewGameRequest, USER_GAMES_REQUEST, JOIN_GAME_REQUEST,
                              PLACE_PIECE_REQUEST, STRIKE_REQUEST, GAME_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
 from utils import get_by_urlsafe
@@ -288,8 +288,11 @@ class BattleshipAPI(remote.Service):
         for field in game_form.all_fields():
             if field.name == "player_one" or field.name == "player_two" or field.name == "player_turn":
                 player_key = getattr(game_obj, field.name)
-                player = player_key.get()
-                setattr(game_form, field.name, player.name)
+                if player_key:
+                    player = player_key.get()
+                    setattr(game_form, field.name, player.name)
+                else:
+                    setattr(game_form, field.name, "None")
             elif hasattr(game_obj, field.name):
                 setattr(game_form, field.name, str(getattr(game_obj, field.name)))
         return game_form
@@ -321,7 +324,7 @@ class BattleshipAPI(remote.Service):
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=USER_GAMES_REQUEST,
-                      response_message=StringMessage,
+                      response_message=UserGames,
                       path='user/games/{user_name}',
                       name='game.get_user_games',
                       http_method='GET')
@@ -331,7 +334,7 @@ class BattleshipAPI(remote.Service):
         user = User.query(User.name == request.user_name).get()
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
                                             Game.player_two == user.key)).fetch()
-        return StringMessage(message="hello")
+        return UserGames(games=[self._copy_game_to_form(game) for game in user_games])
 
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -

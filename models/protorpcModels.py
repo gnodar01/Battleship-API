@@ -21,6 +21,10 @@ class GameStatusMessage(messages.Message):
     player_turn = messages.StringField(6, required=True)
     game_over = messages.StringField(7, required=True)
 
+class UserGames(messages.Message):
+    """GamesStatusMessages on each of a user's games"""
+    games = messages.MessageField(GameStatusMessage, 1, repeated=True)
+
 class PieceType(messages.Enum):
     aircraft_carrier = 1
     battleship = 2
