@@ -273,7 +273,6 @@ class BattleshipAPI(remote.Service):
                 # check if game_over
                 game_over = self._game_status(game, target_player)
                 if game_over:
-                    # TODO: Mark Winner
                     game.winner = current_player
                     game.put()
                     return StringMessage(message="{} sunk, game over!".format(piece.ship))
