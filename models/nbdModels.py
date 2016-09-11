@@ -19,9 +19,9 @@ class Game(ndb.Model):
     player_one_pieces_loaded = ndb.BooleanProperty(required=True, default=False)
     player_two_pieces_loaded = ndb.BooleanProperty(required=True, default=False)
     game_started = ndb.BooleanProperty(required=True, default=False)
-    player_turn = ndb.KeyProperty(required=True)
+    player_turn = ndb.KeyProperty(required=True, kind='User')
     game_over = ndb.BooleanProperty(required=True, default=False)
-    # TODO: add winner key
+    winner = ndb.KeyProperty(kind='User')
 
 class Piece(ndb.Model):
     """Location and status of player's game pieces"""

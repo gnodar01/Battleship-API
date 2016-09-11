@@ -234,6 +234,7 @@ class BattleshipAPI(remote.Service):
 
         # Player who's board is being attacked
         # TODO: Raise error if this player does not exist
+        current_player = game.player_turn
         target_player = User.query(User.name == request.target_player).get()
 
         if game.player_turn == target_player.key:
@@ -273,6 +274,8 @@ class BattleshipAPI(remote.Service):
                 game_over = self._game_status(game, target_player)
                 if game_over:
                     # TODO: Mark Winner
+                    game.winner = current_player
+                    game.put()
                     return StringMessage(message="{} sunk, game over!".format(piece.ship))
                 elif piece_sunk:
                     return StringMessage(message="{} sunk!".format(piece.ship))
@@ -286,9 +289,9 @@ class BattleshipAPI(remote.Service):
 
     def _copy_game_to_form(self, game_obj):
         game_form = GameStatusMessage()
-        setattr(game_form, "game_key", str(game_obj.key.urlsafe() ))
+        setattr(game_form, "game_key", str( game_obj.key.urlsafe() ))
         for field in game_form.all_fields():
-            if field.name == "player_one" or field.name == "player_two" or field.name == "player_turn":
+            if field.name == "player_one" or field.name == "player_two" or field.name == "player_turn" or field.name == "winner":
                 player_key = getattr(game_obj, field.name)
                 if player_key:
                     player = player_key.get()
@@ -358,6 +361,31 @@ class BattleshipAPI(remote.Service):
         for i in range(0,len(PIECES)):
             for player in players:
                 Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coord_set[i]).put()
+        game.game_started = True
+        game.player_one_pieces_loaded = True
+        game.player_two_pieces_loaded = True
+        game.put()
+        return StringMessage(message="donezo")
+
+    @endpoints.method(request_message=PLACE_DUMMY_PIECES_REQUEST,
+                      response_message=StringMessage,
+                      path='game/place_pieces/mostly_hit/{url_safe_game_key}',
+                      name='game.place_dummy_mostly_hit_pieces',
+                      http_method='POST')
+    def place_dummy_mostly_hit_pieces(self, request):
+        """Place dummy pieces"""
+        # TODO: Check if game exists
+        # TODO: If player one or player two does not exist, raise error
+        # TODO: Check that game has no pieces laid
+        players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
+        game = get_by_urlsafe(request.url_safe_game_key, Game)
+        pieces = [piece for piece in PIECES]
+        coord_set = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1','E2']]
+        hits = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1']]
+        sunk_status = [True,True,True,True,False]
+        for i in range(0,len(PIECES)):
+            for player in players:
+                Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coord_set[i], hit_marks=hits[i], sunk=sunk_status[i]).put()
         game.game_started = True
         game.player_one_pieces_loaded = True
         game.player_two_pieces_loaded = True
