@@ -20,6 +20,7 @@ class GameStatusMessage(messages.Message):
     game_started = messages.StringField(5, required=True)
     player_turn = messages.StringField(6, required=True)
     game_over = messages.StringField(7, required=True)
+    game_key = messages.StringField(8, required=True)
 
 class UserGames(messages.Message):
     """GamesStatusMessages on each of a user's games"""

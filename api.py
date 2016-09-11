@@ -286,6 +286,7 @@ class BattleshipAPI(remote.Service):
 
     def _copy_game_to_form(self, game_obj):
         game_form = GameStatusMessage()
+        setattr(game_form, "game_key", str(game_obj.key.urlsafe() ))
         for field in game_form.all_fields():
             if field.name == "player_one" or field.name == "player_two" or field.name == "player_turn":
                 player_key = getattr(game_obj, field.name)
