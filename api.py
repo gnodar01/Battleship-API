@@ -344,7 +344,7 @@ class BattleshipAPI(remote.Service):
             if request.include.lower() == 'wins':
                 user_games = user_games.filter(Game.winner == user.key).fetch()
             elif request.include.lower() == 'losses':
-                user_games = user_games.filter(Game.winner != user.key).fetch()
+                user_games = user_games.filter(Game.winner != user.key).filter(Game.winner != None).fetch()
         else:
             user_games = user_games.fetch()
         # TODO: if any games
