@@ -323,6 +323,7 @@ class BattleshipAPI(remote.Service):
     def get_game_status(self, request):
         """Get a game's current status"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
+        # TODO: if game exists
         return self._copy_game_to_form(game)
 
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -337,7 +338,16 @@ class BattleshipAPI(remote.Service):
         # it might make sense for each game to be a descendant of a User
         user = User.query(User.name == request.user_name).get()
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
-                                            Game.player_two == user.key)).fetch()
+                                            Game.player_two == user.key))
+
+        if request.include != None and request.include.lower() in ['wins', 'losses']:
+            if request.include.lower() == 'wins':
+                user_games = user_games.filter(Game.winner == user.key).fetch()
+            elif request.include.lower() == 'losses':
+                user_games = user_games.filter(Game.winner != user.key).fetch()
+        else:
+            user_games = user_games.fetch()
+        # TODO: if any games
         return UserGames(games=[self._copy_game_to_form(game) for game in user_games])
 
 

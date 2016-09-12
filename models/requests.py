@@ -17,7 +17,6 @@ class NewGameRequest(messages.Message):
     player_two_name = messages.StringField(2)
 
 class JoinGameForm(messages.Message):
-    # 
     player_two_name = messages.StringField(1)
 
 class PlacePieceForm(messages.Message):
@@ -35,8 +34,8 @@ class PlaceDummyPiecesForm(messages.Message):
     player_one = messages.StringField(1)
     player_two = messages.StringField(2)
 
+
 GAME_REQUEST = endpoints.ResourceContainer(
-    # 
     url_safe_game_key = messages.StringField(1, required=True))
 
 JOIN_GAME_REQUEST = endpoints.ResourceContainer(
@@ -56,5 +55,7 @@ PLACE_DUMMY_PIECES_REQUEST = endpoints.ResourceContainer(
     url_safe_game_key = messages.StringField(3))
 
 USER_GAMES_REQUEST = endpoints.ResourceContainer(
-    user_name = messages.StringField(1, required=True))
+    user_name = messages.StringField(1, required=True),
+    include = messages.StringField(2)
+)
 
