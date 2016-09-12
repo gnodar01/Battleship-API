@@ -350,6 +350,14 @@ class BattleshipAPI(remote.Service):
         # TODO: if any games
         return UserGames(games=[self._copy_game_to_form(game) for game in user_games])
 
+    @endpoints.method(request_message=message_types.VoidMessage,
+                      response_message=StringMessage,
+                      path='game/cancel', # /{url_safe_game_key}
+                      name='game.cancel_game',
+                      http_method='GET')
+    def cancel_game(self, request):
+        """Cancels an active game"""
+        return StringMessage(message="Temporary Return Message")
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 
