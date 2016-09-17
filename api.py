@@ -352,7 +352,7 @@ class BattleshipAPI(remote.Service):
 
     @endpoints.method(request_message=GAME_REQUEST,
                       response_message=StringMessage,
-                      path='game/cancel', # /{url_safe_game_key}
+                      path='game/cancel/{url_safe_game_key}',
                       name='game.cancel_game',
                       http_method='GET')
     def cancel_game(self, request):
@@ -369,6 +369,15 @@ class BattleshipAPI(remote.Service):
             return StringMessage(message="Game deleted")
         else:
             return StringMessage(message="Game does not exist")
+
+    @endpoints.method(request_message=message_types.VoidMessage,
+                      response_message='',
+                      path='rankings',
+                      name='get_rankings',
+                      http_method='GET')
+    def get_user_ranks(self, request):
+        """Gets rank of given user"""
+        return StringMessage(message="You numbah won!")
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 
