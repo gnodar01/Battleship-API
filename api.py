@@ -371,12 +371,16 @@ class BattleshipAPI(remote.Service):
             return StringMessage(message="Game does not exist")
 
     @endpoints.method(request_message=message_types.VoidMessage,
-                      response_message='',
+                      response_message=StringMessage,
                       path='rankings',
                       name='get_rankings',
                       http_method='GET')
     def get_user_ranks(self, request):
         """Gets rank of given user"""
+        # TODO:
+        # list of all games withs status 'game over'
+        # loop through all games
+        # hash of keys = game players, value = (hash of key = won, loss; value = integer)
         return StringMessage(message="You numbah won!")
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
