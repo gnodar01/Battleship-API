@@ -304,7 +304,6 @@ class BattleshipAPI(remote.Service):
 
     def _copy_ranking_to_form(self, index, user_scores):
         ranking_form = Ranking()
-        print user_scores, index
         setattr(ranking_form, "username", user_scores[0])
         setattr(ranking_form, "ranking", index+1)
         setattr(ranking_form, "games_won", user_scores[1])
