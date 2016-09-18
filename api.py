@@ -8,6 +8,7 @@ api.py - Udacity conference server-side Python App Engine API;
     created by Nodari Gogoberidze - June 2016
 """
 
+from math import log
 # import logging
 import endpoints
 from google.appengine.ext import ndb
@@ -328,6 +329,44 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _win_loss_list(self, games):
+        """Returns a dict of wins and losses for each user by querying a list of all games with status game_over == True"""
+        win_loss = {}
+        for game in games:
+            game_winner = game.winner
+            if game_winner == game.player_one:
+                game_loser = game.player_two
+            else:
+                game_loser = game.player_one
+            game_winner = game_winner.get().name
+            game_loser = game_loser.get().name
+
+            if game_winner in win_loss:
+                win_loss[game_winner]['won'] += 1
+            else:
+                win_loss[game_winner] = {'won': 1, 'lost': 0}
+            if game_loser in win_loss:
+                win_loss[game_loser]['lost'] += 1
+            else:
+                win_loss[game_loser] = {'won': 0, 'lost': 1}
+        return win_loss
+
+    def _assign_rankings(self, win_loss, total_games):
+        """Takes in a dict of wins & losses by user, returns list of rankings
+        based on the reatio of their wins compared to losses, and the total
+        number of games played by all users, plus a reward factor based on the
+        number of games played by the user with respect to total number of
+        games played overall"""
+        rankings = []
+        for user in win_loss:
+            won = win_loss[user]['won']
+            lost = win_loss[user]['lost']
+            win_diff = float(won - lost)
+            games_played = float(won + lost)
+            score = (win_diff / total_games) + log(games_played, total_games)
+            rankings.append((user, score))
+        return sorted(rankings, key=lambda tup: tup[1])
+
     @endpoints.method(request_message=USER_GAMES_REQUEST,
                       response_message=UserGames,
                       path='user/games/{user_name}',
@@ -376,11 +415,13 @@ class BattleshipAPI(remote.Service):
                       name='get_rankings',
                       http_method='GET')
     def get_user_ranks(self, request):
-        """Gets rank of given user"""
-        # TODO:
-        # list of all games withs status 'game over'
-        # loop through all games
-        # hash of keys = game players, value = (hash of key = won, loss; value = integer)
+        """Gets list of user rankings"""
+        completed_games = Game.query().filter(Game.game_over == True).fetch()
+        total_games = len(completed_games)
+        win_loss = self._win_loss_list(completed_games)
+        rankings = self._assign_rankings(win_loss, total_games)
+        print win_loss
+        print rankings
         return StringMessage(message="You numbah won!")
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
