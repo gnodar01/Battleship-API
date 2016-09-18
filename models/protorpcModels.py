@@ -27,6 +27,18 @@ class UserGames(messages.Message):
     """GamesStatusMessages on each of a user's games"""
     games = messages.MessageField(GameStatusMessage, 1, repeated=True)
 
+class Ranking(messages.Message):
+    """Ranking for a user"""
+    username = messages.StringField(1, required=True)
+    ranking = messages.IntegerField(2, required=True)
+    games_won = messages.IntegerField(3, required=True)
+    games_lost = messages.IntegerField(4, required=True)
+    score = messages.FloatField(5, required=True)
+
+class Rankings(messages.Message):
+    """Rankings for each user"""
+    rankings = messages.MessageField(Ranking, 1, repeated=True)
+
 class PieceType(messages.Enum):
     aircraft_carrier = 1
     battleship = 2

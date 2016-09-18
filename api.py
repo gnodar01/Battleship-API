@@ -17,7 +17,7 @@ from protorpc import remote, messages, message_types
 # from google.appengine.api import taskqueue
 
 from models.nbdModels import User, Game, Piece, Miss
-from models.protorpcModels import StringMessage, GameStatusMessage, UserGames
+from models.protorpcModels import StringMessage, GameStatusMessage, UserGames, Ranking, Rankings
 from models.requests import (UserRequest, NewGameRequest, USER_GAMES_REQUEST, JOIN_GAME_REQUEST,
                              PLACE_PIECE_REQUEST, STRIKE_REQUEST, GAME_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
 from utils import get_by_urlsafe
@@ -302,6 +302,16 @@ class BattleshipAPI(remote.Service):
                 setattr(game_form, field.name, str(getattr(game_obj, field.name)))
         return game_form
 
+    def _copy_ranking_to_form(self, index, user_scores):
+        ranking_form = Ranking()
+        print user_scores, index
+        setattr(ranking_form, "username", user_scores[0])
+        setattr(ranking_form, "ranking", index+1)
+        setattr(ranking_form, "games_won", user_scores[1])
+        setattr(ranking_form, "games_lost", user_scores[2])
+        setattr(ranking_form, "score", user_scores[3])
+        return ranking_form
+
     @endpoints.method(request_message=GAME_REQUEST,
                       response_message=StringMessage,
                       path='game/coords/{url_safe_game_key}',
@@ -357,15 +367,26 @@ class BattleshipAPI(remote.Service):
         number of games played by all users, plus a reward factor based on the
         number of games played by the user with respect to total number of
         games played overall"""
-        rankings = []
+        rankings = win_loss
         for user in win_loss:
             won = win_loss[user]['won']
             lost = win_loss[user]['lost']
             win_diff = float(won - lost)
             games_played = float(won + lost)
             score = (win_diff / total_games) + log(games_played, total_games)
-            rankings.append((user, score))
-        return sorted(rankings, key=lambda tup: tup[1])
+            rankings[user]['score'] = score
+        return rankings
+
+    def _sort_rankings(self, rankings):
+        """Takes in in a dict of rankings, return list of tuples with username, wins, losses, score; sorted by score"""
+        ranking_list = []
+        for user in rankings:
+            wins = rankings[user]['won']
+            losses = rankings[user]['lost']
+            score = rankings[user]['score']
+            ranking_list.append((user, wins, losses, score))
+        # Good ol' martian smiley: http://stackoverflow.com/questions/3705670/best-way-to-create-a-reversed-list-in-python
+        return sorted(ranking_list, key=lambda tup: tup[3])[::-1]
 
     @endpoints.method(request_message=USER_GAMES_REQUEST,
                       response_message=UserGames,
@@ -410,7 +431,7 @@ class BattleshipAPI(remote.Service):
             return StringMessage(message="Game does not exist")
 
     @endpoints.method(request_message=message_types.VoidMessage,
-                      response_message=StringMessage,
+                      response_message=Rankings,
                       path='rankings',
                       name='get_rankings',
                       http_method='GET')
@@ -420,9 +441,8 @@ class BattleshipAPI(remote.Service):
         total_games = len(completed_games)
         win_loss = self._win_loss_list(completed_games)
         rankings = self._assign_rankings(win_loss, total_games)
-        print win_loss
-        print rankings
-        return StringMessage(message="You numbah won!")
+        sorted_rankings = self._sort_rankings(rankings)
+        return Rankings(rankings=[self._copy_ranking_to_form(index, score) for index, score in enumerate(sorted_rankings)])
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 
