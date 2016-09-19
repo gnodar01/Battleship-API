@@ -39,6 +39,19 @@ class Rankings(messages.Message):
     """Rankings for each user"""
     rankings = messages.MessageField(Ranking, 1, repeated=True)
 
+class MoveDetails(messages.Message):
+    """Details of a given move"""
+    target_player_name = messages.StringField(1, required=True)
+    attacking_player_name = messages.StringField(2, required=True)
+    target_coordinate = messages.StringField(3, required=True)
+    status = messages.StringField(4, required=True)
+    ship_type = messages.StringField(5)
+    move_number = messages.IntegerField(6, required=True)
+
+class GameHistory(messages.Message):
+    """History of all moves played for a given game"""
+    moves = messages.MessageField(MoveDetails, 1, repeated=True)
+
 class PieceType(messages.Enum):
     aircraft_carrier = 1
     battleship = 2

@@ -9,6 +9,7 @@ api.py - Udacity conference server-side Python App Engine API;
 """
 
 from math import log
+import json
 # import logging
 import endpoints
 from google.appengine.ext import ndb
@@ -17,7 +18,7 @@ from protorpc import remote, messages, message_types
 # from google.appengine.api import taskqueue
 
 from models.nbdModels import User, Game, Piece, Miss
-from models.protorpcModels import StringMessage, GameStatusMessage, UserGames, Ranking, Rankings
+from models.protorpcModels import StringMessage, GameStatusMessage, UserGames, Ranking, Rankings, GameHistory, MoveDetails
 from models.requests import (UserRequest, NewGameRequest, USER_GAMES_REQUEST, JOIN_GAME_REQUEST,
                              PLACE_PIECE_REQUEST, STRIKE_REQUEST, GAME_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
 from utils import get_by_urlsafe
@@ -220,6 +221,17 @@ class BattleshipAPI(remote.Service):
             return piece.sunk
         return piece.sunk
 
+    def _log_history(self, game, target_player, attacking_player, coord, status, piece_name=None):
+        move_details = {'target_player': target_player.name,
+                        'attacking_player': attacking_player.get().name,
+                        'target_coordinate': coord,
+                        'status': status}
+        if piece_name:
+            move_details['ship_type'] = piece_name
+        game.history.append(move_details)
+        game.put()
+
+
     @endpoints.method(request_message=STRIKE_REQUEST,
                       response_message=StringMessage,
                       path='game/strike/{url_safe_game_key}',
@@ -233,8 +245,12 @@ class BattleshipAPI(remote.Service):
         if game.game_started == False:
             raise endpoints.ConflictException('This game has not started yet, all the pieces must first be loaded by both players')
 
+        target_coord = request.coordinate.upper()
+
         # Player who's board is being attacked
         # TODO: Raise error if this player does not exist
+        # TODO: Raise error if player not registered for this game
+        # TODO: current_player is key only while target_player is object; get whole object? (change _log_history accordingly)
         current_player = game.player_turn
         target_player = User.query(User.name == request.target_player).get()
 
@@ -247,14 +263,14 @@ class BattleshipAPI(remote.Service):
         target_player_hit_coords = [piece.hit_marks for piece in target_player_pieces]
 
         for hitCoords in target_player_hit_coords:
-            if request.coordinate.upper() in hitCoords:
+            if target_coord in hitCoords:
                 raise endpoints.ConflictException('This coordinate has already been hit')
 
         # Previous missed strike's coordinates against the target_player
         misses = Miss.query().filter(Miss.game == game.key, Miss.target_player == target_player.key).fetch()
         miss_coordinates = [missCoord.coordinate for missCoord in misses]
 
-        if request.coordinate.upper() in miss_coordinates:
+        if target_coord in miss_coordinates:
             raise endpoints.ConflictException('This coordinate has already been struck and missed')
 
         # Change it to the other player's turn
@@ -266,8 +282,8 @@ class BattleshipAPI(remote.Service):
         # self._change_player_turn(game)
 
         for piece in target_player_pieces:
-            if request.coordinate.upper() in piece.coordinates:
-                piece.hit_marks.append(request.coordinate.upper())
+            if target_coord in piece.coordinates:
+                piece.hit_marks.append(target_coord)
                 piece.put()
                 # check if piece sunk
                 piece_sunk = self._piece_status(piece)
@@ -276,13 +292,19 @@ class BattleshipAPI(remote.Service):
                 if game_over:
                     game.winner = current_player
                     game.put()
+                    # Log history of hit
+                    self._log_history(game, target_player, current_player, target_coord, 'Hit - Sunk Ship: Game Over', piece_name=piece.ship)
                     return StringMessage(message="{} sunk, game over!".format(piece.ship))
                 elif piece_sunk:
+                    self._log_history(game, target_player, current_player, target_coord, 'Hit - Sunk Ship', piece_name=piece.ship)
                     return StringMessage(message="{} sunk!".format(piece.ship))
                 else:
+                    self._log_history(game, target_player, current_player, target_coord, 'Hit', piece_name=piece.ship)
                     return StringMessage(message="Hit {}!".format(piece.ship))
 
-        Miss(game=game.key, target_player=target_player.key, coordinate=request.coordinate.upper()).put()
+        # Log history of miss
+        self._log_history(game, target_player, current_player, target_coord, 'Miss')
+        Miss(game=game.key, target_player=target_player.key, coordinate=target_coord).put()
         return StringMessage(message="miss")
 
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -310,6 +332,17 @@ class BattleshipAPI(remote.Service):
         setattr(ranking_form, "games_lost", user_scores[2])
         setattr(ranking_form, "score", user_scores[3])
         return ranking_form
+
+    def _copy_move_details_to_form(self, index, game):
+        move_details_form = MoveDetails()
+        setattr(move_details_form, "target_player_name", game['target_player'])
+        setattr(move_details_form, "attacking_player_name", game['attacking_player'])
+        setattr(move_details_form, "target_coordinate", game['target_coordinate'])
+        setattr(move_details_form, "status", game['status'])
+        setattr(move_details_form, "move_number", index+1)
+        if 'ship_type' in game:
+            setattr(move_details_form, "ship_type", game['ship_type'])
+        return move_details_form
 
     @endpoints.method(request_message=GAME_REQUEST,
                       response_message=StringMessage,
@@ -442,6 +475,18 @@ class BattleshipAPI(remote.Service):
         rankings = self._assign_rankings(win_loss, total_games)
         sorted_rankings = self._sort_rankings(rankings)
         return Rankings(rankings=[self._copy_ranking_to_form(index, score) for index, score in enumerate(sorted_rankings)])
+
+    @endpoints.method(request_message=GAME_REQUEST,
+                      response_message=GameHistory,
+                      path='game/history/{url_safe_game_key}',
+                      name='game.get_game_history',
+                      http_method='GET')
+    def get_game_history(self, request):
+        """Gets history of all moves played for a given game"""
+        game_history = get_by_urlsafe(request.url_safe_game_key, Game).history
+        return GameHistory(moves=[self._copy_move_details_to_form(index, game) for index, game in enumerate(game_history)])
+
+
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 

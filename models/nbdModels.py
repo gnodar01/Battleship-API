@@ -22,6 +22,7 @@ class Game(ndb.Model):
     player_turn = ndb.KeyProperty(required=True, kind='User')
     game_over = ndb.BooleanProperty(required=True, default=False)
     winner = ndb.KeyProperty(kind='User')
+    history = ndb.JsonProperty(repeated=True)
 
 class Piece(ndb.Model):
     """Location and status of player's game pieces"""
@@ -37,3 +38,12 @@ class Miss(ndb.Model):
     game = ndb.KeyProperty(required=True, kind='Game')
     target_player = ndb.KeyProperty(required=True, kind='User')
     coordinate = ndb.StringProperty(required=True)
+
+# class History(ndb.Model):
+#     """Store history of all movements"""
+#     game = ndb.KeyProperty(required=True, kind='Game')
+#     status = ndb.StringProperty(required=True)
+#     piece = ndb.StringProperty()
+#     coordinate = ndb.StringProperty(required=True)
+#     attacking_player = ndb.KeyProperty(required=True)
+#     target_player = ndb.KeyProperty(required=True)
