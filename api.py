@@ -17,7 +17,7 @@ from protorpc import remote, messages, message_types
 # from google.appengine.api import memcache
 # from google.appengine.api import taskqueue
 
-from models.nbdModels import User, Game, Piece, Miss
+from models.ndbModels import User, Game, Piece, Miss
 from models.protorpcModels import StringMessage, GameStatusMessage, UserGames, Ranking, Rankings, GameHistory, MoveDetails
 from models.requests import (UserRequest, NewGameRequest, USER_GAMES_REQUEST, JOIN_GAME_REQUEST,
                              PLACE_PIECE_REQUEST, STRIKE_REQUEST, GAME_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
@@ -485,8 +485,6 @@ class BattleshipAPI(remote.Service):
         """Gets history of all moves played for a given game"""
         game_history = get_by_urlsafe(request.url_safe_game_key, Game).history
         return GameHistory(moves=[self._copy_move_details_to_form(index, game) for index, game in enumerate(game_history)])
-
-
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 
