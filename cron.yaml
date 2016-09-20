@@ -1,0 +1,4 @@
+cron:
+- description: reminder for unfinshed games
+  url: /crons/send_reminder
+  schedule: every 24 hours
