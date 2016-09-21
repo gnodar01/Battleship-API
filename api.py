@@ -14,7 +14,7 @@ import json
 import endpoints
 from google.appengine.ext import ndb
 from protorpc import remote, messages, message_types
-# from google.appengine.api import memcache
+from google.appengine.api import memcache
 # from google.appengine.api import taskqueue
 
 from models.ndbModels import User, Game, Piece, Miss
@@ -536,7 +536,18 @@ class BattleshipAPI(remote.Service):
         game.put()
         return StringMessage(message="donezo")
 
-
+    @staticmethod
+    def _cache_average_moves():
+        """Populates memcache with the average number of moves per Game"""
+        games = Game.query(Game.game_over = True).fetch()
+        num_games = len(games)
+        sum_history = 0
+        for game in games:
+            if game.game_history:
+                sum_history += len(game.game_history)
+        average = float(sum_history) / num_games
+        memcache.set(key='MOVES_PER_GAME',
+                     value='The average moves per game is {:.2f}'.format(average))
 
 
 

@@ -39,13 +39,14 @@ class SendReminderEmail(webapp2.RequestHandler):
         
 
 
-class SomethingElse(webapp2.RequestHandler):
+class UpdateAvgMovesPerGame(webapp2.RequestHandler):
     def post(self):
         """Memcache thing"""
-        pass
+        BattleshipAPI._cache_average_moves()
+        self.response.set_status(204)
 
 
 app = webapp2.WSGIApplication([
     ('/crons/send_reminder', SendReminderEmail),
-    ('/tasks/somethingelse', SomethingElse),
+    ('/tasks/cache_average_moves', UpdateAvgMovesPerGame),
 ], debug=True)

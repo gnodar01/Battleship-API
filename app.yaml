@@ -15,6 +15,9 @@ handlers:
 - url: /crons/send_reminder
   script: main.app
 
+- url: /tasks/cache_average_moves
+  script: main.app
+
 libraries:
 - name: webapp2
   version: "2.5.2"
