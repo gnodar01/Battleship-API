@@ -72,6 +72,8 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
+        if request.player_one_name == request.player_two_name:
+            raise endpoints.ConflictException('Player one cannot be the same as player two.')
         player_one = User.query(User.name == request.player_one_name).get()
         if not player_one:
             raise endpoints.ConflictException('{} does not exist.'.format(request.player_one_name))
@@ -98,9 +100,12 @@ class BattleshipAPI(remote.Service):
         if game.player_two:
             raise endpoints.ConflictException('This game is already full!')
         else:
-            # TODO: if player_two does not exist raise error
-            # TODO: player two cannot equal player one
             player_two = User.query(User.name == request.player_two_name).get()
+            player_one = game.player_one.get()
+            if not player_two:
+                raise endpoints.ConflictException('{} does not exist'.format(request.player_two_name))
+            if player_two == player_one:
+                raise endpoints.ConflictException('Player one and player two cannot be the same.')
             game.player_two = player_two.key
             game.put()
         return StringMessage(message=str(game))
