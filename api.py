@@ -72,11 +72,13 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
-        # TODO: if player_one does not exist return error
         player_one = User.query(User.name == request.player_one_name).get()
+        if not player_one:
+            raise endpoints.ConflictException('{} does not exist.'.format(request.player_one_name))
         if request.player_two_name:
-            # TODO: if player_two does not exist throw error
             player_two = User.query(User.name == request.player_two_name).get()
+            if not player_two:
+                raise endpoints.ConflictException('{} does not exist.'.format(request.player_two_name))
             game = Game(player_one=player_one.key, player_turn=player_one.key, player_two=player_two.key)
             game.put()
             return StringMessage(message='player one is {}, player two is {}'.format(player_one.name, player_two.name))
