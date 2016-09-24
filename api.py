@@ -10,6 +10,7 @@ api.py - Udacity conference server-side Python App Engine API;
 
 from math import log
 import json
+from re import match
 # import logging
 import endpoints
 from google.appengine.ext import ndb
@@ -51,10 +52,12 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_user(self, request):
         """Create a User. Requires a unique username"""
-        # TODO: make sure user_name is min of 3 char and email is proper format (regex?)
+        email_format_match = match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', request.email)
+        if not email_format_match:
+            raise endpoints.ConflictException('E-mail is not valid')
+
         if User.query(User.name == request.user_name).get():
-            raise endpoints.ConflictException(
-                    'A User with that name already exists!')
+            raise endpoints.ConflictException('A User with that name already exists!')
         user = User(name=request.user_name, email=request.email)
         user.put()
         return StringMessage(message='User {} created!'.format(
@@ -539,7 +542,7 @@ class BattleshipAPI(remote.Service):
     @staticmethod
     def _cache_average_moves():
         """Populates memcache with the average number of moves per Game"""
-        games = Game.query(Game.game_over = True).fetch()
+        games = Game.query(Game.game_over == True).fetch()
         num_games = len(games)
         sum_history = 0
         for game in games:

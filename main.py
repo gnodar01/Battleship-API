@@ -35,8 +35,7 @@ class SendReminderEmail(webapp2.RequestHandler):
             mail.send_mail('noreply@{}.appspotmail.com'.format(app_id),
                            users[u_id]['email'],
                            subject,
-                           body)
-        
+                           body) 
 
 
 class UpdateAvgMovesPerGame(webapp2.RequestHandler):
