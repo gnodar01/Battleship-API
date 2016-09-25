@@ -505,9 +505,6 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def place_dummy_pieces(self, request):
         """Place dummy pieces"""
-        # TODO: Check if game exists
-        # TODO: If player one or player two does not exist, raise error
-        # TODO: Check that game has no pieces laid
         players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
         game = get_by_urlsafe(request.url_safe_game_key, Game)
         pieces = [piece for piece in PIECES]
@@ -528,9 +525,6 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def place_dummy_mostly_hit_pieces(self, request):
         """Place dummy pieces"""
-        # TODO: Check if game exists
-        # TODO: If player one or player two does not exist, raise error
-        # TODO: Check that game has no pieces laid
         players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
         game = get_by_urlsafe(request.url_safe_game_key, Game)
         pieces = [piece for piece in PIECES]
