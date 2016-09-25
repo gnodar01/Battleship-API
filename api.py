@@ -63,10 +63,13 @@ class BattleshipAPI(remote.Service):
         email_format_match = match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', request.email)
         if not email_format_match:
             raise endpoints.ConflictException('E-mail is not valid')
+        if len(request.user_name) < 3:
+            raise endpoints.ConflictException('Username must be at least 3 characters')
         if User.query(User.name == request.user_name).get():
             raise endpoints.ConflictException('A User with that name already exists')
         if User.query(User.email == request.email).get():
             raise endpoints.ConflictException('A User with that E-Mail already exists')
+            
         user = User(name=request.user_name, email=request.email)
         user.put()
         return StringMessage(message='User {} created!'.format(
