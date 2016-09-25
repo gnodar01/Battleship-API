@@ -89,11 +89,11 @@ class BattleshipAPI(remote.Service):
             player_two = self._get_user(request.player_two_name)
             game = Game(player_one=player_one.key, player_turn=player_one.key, player_two=player_two.key)
             game.put()
-            return StringMessage(message='player one is {}, player two is {}'.format(player_one.name, player_two.name))
+            return StringMessage(message=str(game.key.urlsafe()))
         else:
             game = Game(player_one=player_one.key, player_turn=player_one.key)
             game.put()
-            return StringMessage(message='player one is {}'.format(player_one.name))
+            return StringMessage(message=str(game.key.urlsafe()))
 
     @endpoints.method(request_message=JOIN_GAME_REQUEST,
                       response_message=StringMessage,
@@ -219,8 +219,8 @@ class BattleshipAPI(remote.Service):
             game.player_turn = game.player_one
         game.put()
 
-    def _game_status(self, game, target_player):
-        target_player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == target_player.key).fetch()
+    def _game_over_status(self, game, target_player):
+        target_player_pieces = Piece.query(Piece.game == game.key).filter(Piece.player == target_player.key).fetch()
         for piece in target_player_pieces:
             if piece.sunk == False:
                 return game.game_over
@@ -228,16 +228,15 @@ class BattleshipAPI(remote.Service):
         game.put()
         return game.game_over
 
-    def _piece_status(self, piece):
+    def _piece_sunk_status(self, piece):
         if sorted(piece.coordinates) == sorted(piece.hit_marks):
             piece.sunk = True
             piece.put()
-            return piece.sunk
         return piece.sunk
 
     def _log_history(self, game, target_player, attacking_player, coord, status, piece_name=None):
         move_details = {'target_player': target_player.name,
-                        'attacking_player': attacking_player.get().name,
+                        'attacking_player': attacking_player.name,
                         'target_coordinate': coord,
                         'status': status}
         if piece_name:
@@ -254,37 +253,38 @@ class BattleshipAPI(remote.Service):
     def strike_coord(self, request):
         """Make a move to strike a given coordinate"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
+
         if game.game_over == True:
             raise endpoints.ConflictException('This game has already ended')
+
         if game.game_started == False:
             raise endpoints.ConflictException('This game has not started yet, all the pieces must first be loaded by both players')
 
         target_coord = request.coordinate.upper()
 
         # Player who's board is being attacked
-        # TODO: Raise error if this player does not exist
         # TODO: Raise error if player not registered for this game
-        # TODO: current_player is key only while target_player is object; get whole object? (change _log_history accordingly)
-        current_player = game.player_turn
-        target_player = User.query(User.name == request.target_player).get()
+        attacking_player = game.player_turn.get()
+        target_player = self._get_user(request.target_player)
 
-        if game.player_turn == target_player.key:
+        if attacking_player == target_player:
             raise endpoints.ConflictException('It is not this player\'s turn')
 
         # TODO: check if request.coordinate is a valid coordinate
+        
+        target_player_pieces = Piece.query(Piece.game == game.key).filter(Piece.player == target_player.key).fetch()
+        target_player_pieces_hit_coords = [piece.hit_marks for piece in target_player_pieces]
 
-        target_player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == target_player.key).fetch()
-        target_player_hit_coords = [piece.hit_marks for piece in target_player_pieces]
-
-        for hitCoords in target_player_hit_coords:
-            if target_coord in hitCoords:
+        # Coordinates that have been previously hit against target player
+        for piece_hit_coords in target_player_pieces_hit_coords:
+            if target_coord in piece_hit_coords:
                 raise endpoints.ConflictException('This coordinate has already been hit')
 
-        # Previous missed strike's coordinates against the target_player
-        misses = Miss.query().filter(Miss.game == game.key, Miss.target_player == target_player.key).fetch()
-        miss_coordinates = [missCoord.coordinate for missCoord in misses]
+        # Coordinates that have been previously attempted and missed against target player
+        misses = Miss.query(Miss.game == game.key).filter(Miss.target_player == target_player.key).fetch()
+        miss_coords = [missCoord.coordinate for missCoord in misses]
 
-        if target_coord in miss_coordinates:
+        if target_coord in miss_coords:
             raise endpoints.ConflictException('This coordinate has already been struck and missed')
 
         # Change it to the other player's turn
@@ -296,28 +296,29 @@ class BattleshipAPI(remote.Service):
         # self._change_player_turn(game)
 
         for piece in target_player_pieces:
+            # If a ship is hit
             if target_coord in piece.coordinates:
                 piece.hit_marks.append(target_coord)
                 piece.put()
                 # check if piece sunk
-                piece_sunk = self._piece_status(piece)
+                piece_sunk = self._piece_sunk_status(piece)
                 # check if game_over
-                game_over = self._game_status(game, target_player)
+                game_over = self._game_over_status(game, target_player)
                 if game_over:
-                    game.winner = current_player
+                    game.winner = attacking_player.key
                     game.put()
                     # Log history of hit
-                    self._log_history(game, target_player, current_player, target_coord, 'Hit - Sunk Ship: Game Over', piece_name=piece.ship)
+                    self._log_history(game, target_player, attacking_player, target_coord, 'Hit - Sunk Ship: Game Over', piece_name=piece.ship)
                     return StringMessage(message="{} sunk, game over!".format(piece.ship))
                 elif piece_sunk:
-                    self._log_history(game, target_player, current_player, target_coord, 'Hit - Sunk Ship', piece_name=piece.ship)
+                    self._log_history(game, target_player, attacking_player, target_coord, 'Hit - Sunk Ship', piece_name=piece.ship)
                     return StringMessage(message="{} sunk!".format(piece.ship))
                 else:
-                    self._log_history(game, target_player, current_player, target_coord, 'Hit', piece_name=piece.ship)
+                    self._log_history(game, target_player, attacking_player, target_coord, 'Hit', piece_name=piece.ship)
                     return StringMessage(message="Hit {}!".format(piece.ship))
 
-        # Log history of miss
-        self._log_history(game, target_player, current_player, target_coord, 'Miss')
+        # If no ship is hit
+        self._log_history(game, target_player, attacking_player, target_coord, 'Miss')
         Miss(game=game.key, target_player=target_player.key, coordinate=target_coord).put()
         return StringMessage(message="miss")
 
@@ -523,7 +524,7 @@ class BattleshipAPI(remote.Service):
         game.player_one_pieces_loaded = True
         game.player_two_pieces_loaded = True
         game.put()
-        return StringMessage(message="donezo")
+        return StringMessage(message=str(game.key.urlsafe()))
 
     @endpoints.method(request_message=PLACE_DUMMY_PIECES_REQUEST,
                       response_message=StringMessage,
@@ -548,7 +549,7 @@ class BattleshipAPI(remote.Service):
         game.player_one_pieces_loaded = True
         game.player_two_pieces_loaded = True
         game.put()
-        return StringMessage(message="donezo")
+        return StringMessage(message=str(game.key.urlsafe()))
 
     @staticmethod
     def _cache_average_moves():
