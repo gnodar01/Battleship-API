@@ -455,7 +455,7 @@ class BattleshipAPI(remote.Service):
             lost = win_loss[user]['lost']
             win_diff = float(won - lost)
             games_played = float(won + lost)
-            if games_played <= 1:
+            if total_games <= 1:
                 score = win_diff / total_games
             else:
                 score = (win_diff / total_games) + log(games_played, total_games)
