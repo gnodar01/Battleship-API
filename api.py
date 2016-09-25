@@ -166,7 +166,7 @@ class BattleshipAPI(remote.Service):
         # self._board_boundaries_check(request.piece_alignment.name, num_spaces, row_index, col_index)
 
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        player = User.query(User.name == request.player_name).get()
+        player = self._get_user(request.player_name)
 
         # Raise error if all of the pieces for this player and this game have been placed already
         if game.game_started:
@@ -378,7 +378,6 @@ class BattleshipAPI(remote.Service):
     def get_game_status(self, request):
         """Get a game's current status"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        # TODO: if game exists
         return self._copy_game_to_form(game)
 
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -440,9 +439,9 @@ class BattleshipAPI(remote.Service):
     def get_user_games(self, request):
         """Returns all of a User's active games"""
         # it might make sense for each game to be a descendant of a User
-        user = User.query(User.name == request.user_name).get()
+        user = self._get_user(request.user_name)
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
-                                            Game.player_two == user.key))
+                                       Game.player_two == user.key))
 
         if request.include != None and request.include.lower() in ['wins', 'losses']:
             if request.include.lower() == 'wins':
@@ -451,7 +450,6 @@ class BattleshipAPI(remote.Service):
                 user_games = user_games.filter(Game.winner != user.key).filter(Game.winner != None).fetch()
         else:
             user_games = user_games.fetch()
-        # TODO: if any games
         return UserGames(games=[self._copy_game_to_form(game) for game in user_games])
 
     @endpoints.method(request_message=GAME_REQUEST,
