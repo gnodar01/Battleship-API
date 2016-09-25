@@ -139,75 +139,36 @@ class BattleshipAPI(remote.Service):
         if (piece_alignment == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
 
-    def _all_coords(self, piece_alignment, num_spaces, row_index, col_index):
-        """Get all coordinates of the piece based on it's starting coordinates and piece size"""
-        if piece_alignment == 'vertical':
-            columns = COLUMNS[col_index]
-            rows = ROWS[row_index : row_index + num_spaces]
-        else:
-            columns = COLUMNS[col_index : col_index + num_spaces]
-            rows = ROWS[row_index]
-        return [(col + row) for col in columns for row in rows]
-
-    @endpoints.method(request_message=PLACE_PIECE_REQUEST,
-                      response_message=StringMessage,
-                      path='game/place_piece/{url_safe_game_key}',
-                      name='game.place_piece',
-                      http_method='POST')
-    def place_piece(self, request):
-        """Set up a player's board pieces"""
-        # Raise errors if the row or column coordinates are not valid
-        if request.first_row_coordinate not in ROWS:
-            raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
-        if request.first_column_coordinate.upper() not in COLUMNS:
-            raise endpoints.ConflictException('Column coordinate must be between A - J')
-        # self._coord_validity_check(request.first_row_coordinate, request.first_column_coordinate.upper())
-
-        num_spaces = PIECES[request.piece_type.name]['spaces']
-        row_index = ROWS.index(request.first_row_coordinate)
-        col_index = COLUMNS.index(request.first_column_coordinate.upper())
-
-        # Raise errors if the peice is being placed outside of the bounds of the board
-        if (request.piece_alignment.name == 'vertical' and row_index + num_spaces > len(ROWS)):
-            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
-        if (request.piece_alignment.name == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
-            raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
-        # self._board_boundaries_check(request.piece_alignment.name, num_spaces, row_index, col_index)
-
-        game = get_by_urlsafe(request.url_safe_game_key, Game)
-
-        # Raise error if all of the pieces for this player and this game have been placed already
+    def _game_started_check(self, game):
+        """Raise error if all of the pieces for this player and this game have been placed already"""
         if game.game_started:
             raise endpoints.ConflictException('All of the pieces for this game have already been placed')
 
-        player = self._get_registered_player(game, request.player_name)
-
-        # Get all coordinates of the piece based on it's starting coordinates and piece size
-        if request.piece_alignment.name == 'vertical':
-            columns = COLUMNS[col_index]
+    def _get_all_coords(self, piece_alignment, num_spaces, row_index, col_index):
+        """Get all coordinates of the piece based on it's starting coordinates and piece size"""
+        if piece_alignment == 'vertical':
+            columns = [COLUMNS[col_index]]
             rows = ROWS[row_index : row_index + num_spaces]
-        else:
+        elif piece_alignment == 'horizontal':
             columns = COLUMNS[col_index : col_index + num_spaces]
-            rows = ROWS[row_index]
-        coordinates = [(col + row) for col in columns for row in rows]
-        # coordinates = self._all_coords(request.piece_alignment.name, num_spaces, row_index, col_index)
+            rows = [ROWS[row_index]]
+        else:
+            raise endpoints.ConflictException('{} is not a valid piece alignment'.format(piece_alignment))
+        return [(col + row) for col in columns for row in rows]
 
-        # Errors based on player's previously placed pieces for this game
-        player_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == player.key).fetch()
+    def _check_placement_validity(self, game, player_pieces, piece_type, piece_coords):
+        """Raise errors if piece placement is invalid: if the piece has already been placed, or if the piece being placed intersects with another piece"""
         for placed_piece in player_pieces:
             # Raise error if the piece has already been placed on the player's board
-            if placed_piece.ship == request.piece_type.name:
+            if placed_piece.ship == piece_type:
                 raise endpoints.ConflictException('This piece has already been placed for this player')
             # Raise error if piece intersects with any other piece
             for placed_coordinate in placed_piece.coordinates:
-                if placed_coordinate in coordinates:
+                if placed_coordinate in piece_coords:
                     raise endpoints.ConflictException('Your piece intersects with {}'.format(placed_coordinate))
 
-        piece = Piece(game=game.key, player=player.key, ship=request.piece_type.name, coordinates=coordinates)
-        player_pieces.append(piece)
-        piece.put()
-
-        # Check if all pieces for this player & game have been placed
+    def _update_game_started_status(self, game, player, player_pieces):
+        """Checks if all of the pieces for a given player are loaded, and if that is true for both of a Game's players, start the game"""
         if len(player_pieces) == len(PIECES):
             if player.key == game.player_one:
                 game.player_one_pieces_loaded = True
@@ -217,6 +178,50 @@ class BattleshipAPI(remote.Service):
             if game.player_one_pieces_loaded == True and game.player_two_pieces_loaded == True:
                 game.game_started = True
             game.put()
+
+    @endpoints.method(request_message=PLACE_PIECE_REQUEST,
+                      response_message=StringMessage,
+                      path='game/place_piece/{url_safe_game_key}',
+                      name='game.place_piece',
+                      http_method='POST')
+    def place_piece(self, request):
+        """Set up a player's board pieces"""
+        piece_type = request.piece_type.name
+        first_row_coordinate = request.first_row_coordinate
+        first_column_coordinate = request.first_column_coordinate.upper()
+        piece_alignment = request.piece_alignment.name
+        player_name = request.player_name
+        url_safe_game_key = request.url_safe_game_key
+
+        # Raise errors if the row or column coordinates are not valid
+        self._coord_validity_check(first_row_coordinate, first_column_coordinate)
+
+        num_spaces = PIECES[piece_type]['spaces']
+        row_index = ROWS.index(first_row_coordinate)
+        col_index = COLUMNS.index(first_column_coordinate)
+
+        # Raise errors if the peice is being placed outside of the bounds of the board
+        self._board_boundaries_check(piece_alignment, num_spaces, row_index, col_index)
+
+        # Get all coordinates of the piece based on it's starting coordinates and piece size
+        coordinates = self._get_all_coords(piece_alignment, num_spaces, row_index, col_index)
+        game = get_by_urlsafe(url_safe_game_key, Game)
+
+        # Raise error if all of the pieces for this player and this game have been placed already
+        self._game_started_check(game)
+
+        player = self._get_registered_player(game, player_name)
+        player_pieces = Piece.query(Piece.game == game.key).filter(Piece.player == player.key).fetch()
+
+        # Errors based on player's previously placed pieces for this game
+        self._check_placement_validity(game, player_pieces, piece_type, coordinates)
+
+        piece = Piece(game=game.key, player=player.key, ship=piece_type, coordinates=coordinates)
+        player_pieces.append(piece)
+        piece.put()
+
+        # Check if all pieces for this player & game have been placed
+        self._update_game_started_status(game, player, player_pieces)
 
         return StringMessage(message=str([piece.ship for piece in player_pieces]))
 
