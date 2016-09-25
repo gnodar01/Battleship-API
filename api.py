@@ -455,7 +455,10 @@ class BattleshipAPI(remote.Service):
             lost = win_loss[user]['lost']
             win_diff = float(won - lost)
             games_played = float(won + lost)
-            score = (win_diff / total_games) + log(games_played, total_games)
+            if games_played <= 1:
+                score = win_diff / total_games
+            else:
+                score = (win_diff / total_games) + log(games_played, total_games)
             rankings[user]['score'] = score
         return rankings
 
@@ -520,6 +523,8 @@ class BattleshipAPI(remote.Service):
         """Gets list of user rankings"""
         completed_games = Game.query().filter(Game.game_over == True).fetch()
         total_games = len(completed_games)
+        if total_games == 0:
+            raise endpoints.ConflictException('No games have been played')
         win_loss = self._win_loss_list(completed_games)
         rankings = self._assign_rankings(win_loss, total_games)
         sorted_rankings = self._sort_rankings(rankings)
