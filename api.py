@@ -35,7 +35,7 @@ PIECES = {
 
 COLUMNS = ['A','B','C','D','E','F','G','H','I','J']
 ROWS = ['1','2','3','4','5','6','7','8','9','10']
-GRID = [(column, row) for column in COLUMNS for row in ROWS]
+GRID = [(column + row) for column in COLUMNS for row in ROWS]
 
 
 # TODO: Authentication for each of the methods
@@ -260,17 +260,19 @@ class BattleshipAPI(remote.Service):
         if game.game_started == False:
             raise endpoints.ConflictException('This game has not started yet, all the pieces must first be loaded by both players')
 
-        target_coord = request.coordinate.upper()
-
-        # Player who's board is being attacked
-        # TODO: Raise error if player not registered for this game
         attacking_player = game.player_turn.get()
         target_player = self._get_user(request.target_player)
 
         if attacking_player == target_player:
-            raise endpoints.ConflictException('It is not this player\'s turn')
+            raise endpoints.ConflictException('It is not this {}\'s turn'.format(target_player.name))
 
-        # TODO: check if request.coordinate is a valid coordinate
+        if target_player.key != game.player_one and target_player.key != game.player_two:
+            raise endpoints.ConflictException('{} is not registered for this game'.format(target_player.name))
+
+        target_coord = request.coordinate.upper()
+
+        if target_coord not in GRID:
+            raise endpoints.ConflictException('{} is not a valid coordinate'.format(target_coord))
         
         target_player_pieces = Piece.query(Piece.game == game.key).filter(Piece.player == target_player.key).fetch()
         target_player_pieces_hit_coords = [piece.hit_marks for piece in target_player_pieces]
@@ -288,12 +290,7 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('This coordinate has already been struck and missed')
 
         # Change it to the other player's turn
-        if game.player_turn == game.player_one:
-            game.player_turn = game.player_two
-        else:
-            game.player_turn = game.player_one
-        game.put()
-        # self._change_player_turn(game)
+        self._change_player_turn(game)
 
         for piece in target_player_pieces:
             # If a ship is hit
