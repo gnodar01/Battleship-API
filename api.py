@@ -45,6 +45,14 @@ class BattleshipAPI(remote.Service):
 
 # - - - - User Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _get_user(self, username):
+        """Takes in the name of a player/user, and returns a user query object"""
+        user = User.query(User.name == username).get()
+        if not user:
+            raise endpoints.ConflictException('{} does not exist.'.format(username))
+        return user
+
+
     @endpoints.method(request_message=UserRequest,
                       response_message=StringMessage,
                       path='user/new',
@@ -55,9 +63,10 @@ class BattleshipAPI(remote.Service):
         email_format_match = match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', request.email)
         if not email_format_match:
             raise endpoints.ConflictException('E-mail is not valid')
-
         if User.query(User.name == request.user_name).get():
-            raise endpoints.ConflictException('A User with that name already exists!')
+            raise endpoints.ConflictException('A User with that name already exists')
+        if User.query(User.email == request.email).get():
+            raise endpoints.ConflictException('A User with that E-Mail already exists')
         user = User(name=request.user_name, email=request.email)
         user.put()
         return StringMessage(message='User {} created!'.format(
@@ -74,13 +83,10 @@ class BattleshipAPI(remote.Service):
         """Create a new Game"""
         if request.player_one_name == request.player_two_name:
             raise endpoints.ConflictException('Player one cannot be the same as player two.')
-        player_one = User.query(User.name == request.player_one_name).get()
-        if not player_one:
-            raise endpoints.ConflictException('{} does not exist.'.format(request.player_one_name))
+        player_one = self._get_user(request.player_one_name)
+
         if request.player_two_name:
-            player_two = User.query(User.name == request.player_two_name).get()
-            if not player_two:
-                raise endpoints.ConflictException('{} does not exist.'.format(request.player_two_name))
+            player_two = self._get_user(request.player_two_name)
             game = Game(player_one=player_one.key, player_turn=player_one.key, player_two=player_two.key)
             game.put()
             return StringMessage(message='player one is {}, player two is {}'.format(player_one.name, player_two.name))
@@ -100,10 +106,8 @@ class BattleshipAPI(remote.Service):
         if game.player_two:
             raise endpoints.ConflictException('This game is already full!')
         else:
-            player_two = User.query(User.name == request.player_two_name).get()
+            player_two = self._get_user(request.player_two_name)
             player_one = game.player_one.get()
-            if not player_two:
-                raise endpoints.ConflictException('{} does not exist'.format(request.player_two_name))
             if player_two == player_one:
                 raise endpoints.ConflictException('Player one and player two cannot be the same.')
             game.player_two = player_two.key
