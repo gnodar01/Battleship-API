@@ -314,7 +314,7 @@ class BattleshipAPI(remote.Service):
         target_player = self._get_registered_player(game, request.target_player)
 
         # Ensure attacking_player and target_player are NOT the same
-        self._not_self_strike_check(target_player)
+        self._not_self_strike_check(game, target_player)
 
         target_coord = request.coordinate.upper()
 
