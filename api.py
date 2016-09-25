@@ -125,7 +125,7 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _coord_validity_check(self, row_coord, col_coord):
+    def _coords_validity_check(self, row_coord, col_coord):
         """Raise errors if the row or column coordinates are not valid"""
         if row_coord not in ROWS:
             raise endpoints.ConflictException('Row coordinate must be between 1 - 10')
@@ -139,7 +139,7 @@ class BattleshipAPI(remote.Service):
         if (piece_alignment == 'horizontal' and col_index + num_spaces > len(COLUMNS)):
             raise endpoints.ConflictException('Your piece has gone past the boundaries of the board')
 
-    def _game_started_check(self, game):
+    def _game_not_started_check(self, game):
         """Raise error if all of the pieces for this player and this game have been placed already"""
         if game.game_started:
             raise endpoints.ConflictException('All of the pieces for this game have already been placed')
@@ -194,7 +194,7 @@ class BattleshipAPI(remote.Service):
         url_safe_game_key = request.url_safe_game_key
 
         # Raise errors if the row or column coordinates are not valid
-        self._coord_validity_check(first_row_coordinate, first_column_coordinate)
+        self._coords_validity_check(first_row_coordinate, first_column_coordinate)
 
         num_spaces = PIECES[piece_type]['spaces']
         row_index = ROWS.index(first_row_coordinate)
@@ -208,7 +208,7 @@ class BattleshipAPI(remote.Service):
         game = get_by_urlsafe(url_safe_game_key, Game)
 
         # Raise error if all of the pieces for this player and this game have been placed already
-        self._game_started_check(game)
+        self._game_not_started_check(game)
 
         player = self._get_registered_player(game, player_name)
         player_pieces = Piece.query(Piece.game == game.key).filter(Piece.player == player.key).fetch()
@@ -227,7 +227,42 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _game_over_check(self, game):
+        """Check if game has already ended"""
+        if game.game_over == True:
+            raise endpoints.ConflictException('This game has already ended')
+
+    def _game_started_check(self, game):
+        """Ensure game has started"""
+        if game.game_started == False:
+            raise endpoints.ConflictException('This game has not started yet, all the pieces must first be loaded by both players')
+
+    def _not_self_strike_check(self, game, target_player):
+        """"Ensure the player who's turn it is to strike is not the one being struck"""
+        if game.player_turn == target_player.key:
+            raise endpoints.ConflictException('It is {}\'s turn to strike'.format(target_player.name))
+
+    def _coord_validity_check(self, coord):
+        """Ensure passed in coordinate is a valid coordinate for the Game Board"""
+        if coord not in GRID:
+            raise endpoints.ConflictException('{} is not a valid coordinate'.format(coord))
+
+    def _double_hit_check(self, pieces, target_coord):
+        """Check for ensuring a coordinate that has already been hit is not being hit again"""
+        pieces_hit_coords = [piece.hit_marks for piece in pieces]
+        for hit_coords in pieces_hit_coords:
+            if target_coord in hit_coords:
+                raise endpoints.ConflictException('This coordinate has already been hit')
+
+    def _double_miss_check(self, game, target_player, target_coord):
+        """Ensure that the coordinate being struck has not previsouly been attempted and missed against target player for given game"""
+        misses = Miss.query(Miss.game == game.key).filter(Miss.target_player == target_player.key).fetch()
+        miss_coords = [missCoord.coordinate for missCoord in misses]
+        if target_coord in miss_coords:
+            raise endpoints.ConflictException('This coordinate has already been struck and missed')
+
     def _change_player_turn(self, game):
+        """Changes game's current player to the other registered player"""
         if game.player_turn == game.player_one:
             game.player_turn = game.player_two
         else:
@@ -269,37 +304,29 @@ class BattleshipAPI(remote.Service):
         """Make a move to strike a given coordinate"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
 
-        if game.game_over == True:
-            raise endpoints.ConflictException('This game has already ended')
+        # Check if game has already ended
+        self._game_over_check(game)
 
-        if game.game_started == False:
-            raise endpoints.ConflictException('This game has not started yet, all the pieces must first be loaded by both players')
+        # Ensure game has started
+        self._game_started_check(game)
 
         attacking_player = game.player_turn.get()
         target_player = self._get_registered_player(game, request.target_player)
 
-        if attacking_player == target_player:
-            raise endpoints.ConflictException('It is not this {}\'s turn'.format(target_player.name))
+        # Ensure attacking_player and target_player are NOT the same
+        self._not_self_strike_check(target_player)
 
         target_coord = request.coordinate.upper()
 
-        if target_coord not in GRID:
-            raise endpoints.ConflictException('{} is not a valid coordinate'.format(target_coord))
+        self._coord_validity_check(target_coord)
         
         target_player_pieces = Piece.query(Piece.game == game.key).filter(Piece.player == target_player.key).fetch()
-        target_player_pieces_hit_coords = [piece.hit_marks for piece in target_player_pieces]
 
-        # Coordinates that have been previously hit against target player
-        for piece_hit_coords in target_player_pieces_hit_coords:
-            if target_coord in piece_hit_coords:
-                raise endpoints.ConflictException('This coordinate has already been hit')
+        # Ensure a coordinate that has been previously hit is not being hit again
+        self._double_hit_check(target_player_pieces, target_coord)
 
         # Coordinates that have been previously attempted and missed against target player
-        misses = Miss.query(Miss.game == game.key).filter(Miss.target_player == target_player.key).fetch()
-        miss_coords = [missCoord.coordinate for missCoord in misses]
-
-        if target_coord in miss_coords:
-            raise endpoints.ConflictException('This coordinate has already been struck and missed')
+        self._double_miss_check(game, target_player, target_coord)
 
         # Change it to the other player's turn
         self._change_player_turn(game)
