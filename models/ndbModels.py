@@ -39,11 +39,3 @@ class Miss(ndb.Model):
     target_player = ndb.KeyProperty(required=True, kind='User')
     coordinate = ndb.StringProperty(required=True)
 
-# class History(ndb.Model):
-#     """Store history of all movements"""
-#     game = ndb.KeyProperty(required=True, kind='Game')
-#     status = ndb.StringProperty(required=True)
-#     piece = ndb.StringProperty()
-#     coordinate = ndb.StringProperty(required=True)
-#     attacking_player = ndb.KeyProperty(required=True)
-#     target_player = ndb.KeyProperty(required=True)

@@ -51,14 +51,3 @@ class MoveDetails(messages.Message):
 class GameHistory(messages.Message):
     """History of all moves played for a given game"""
     moves = messages.MessageField(MoveDetails, 1, repeated=True)
-
-class PieceType(messages.Enum):
-    aircraft_carrier = 1
-    battleship = 2
-    submarine = 3
-    destroyer = 4
-    patrol_ship = 5
-
-class Alignment(messages.Enum):
-    horizontal = 1
-    vertical = 2

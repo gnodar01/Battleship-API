@@ -6,7 +6,6 @@ import random
 import endpoints
 from datetime import date
 from protorpc import messages, message_types
-from models.protorpcModels import PieceType, Alignment
 
 class UserRequest(messages.Message):
     user_name = messages.StringField(1, required=True)
@@ -18,6 +17,17 @@ class NewGameRequest(messages.Message):
 
 class JoinGameForm(messages.Message):
     player_two_name = messages.StringField(1)
+
+class PieceType(messages.Enum):
+    aircraft_carrier = 1
+    battleship = 2
+    submarine = 3
+    destroyer = 4
+    patrol_ship = 5
+
+class Alignment(messages.Enum):
+    horizontal = 1
+    vertical = 2
 
 class PlacePieceForm(messages.Message):
     player_name = messages.StringField(1)

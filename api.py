@@ -69,13 +69,19 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('A User with that name already exists')
         if User.query(User.email == request.email).get():
             raise endpoints.ConflictException('A User with that E-Mail already exists')
-            
+
         user = User(name=request.user_name, email=request.email)
         user.put()
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
 
 # - - - - Game Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def _get_registered_player(self, game, username):
+        player = self._get_user(username)
+        if game.player_one != player.key and game.player_two != player.key:
+            raise endpoints.ConflictException('{} is not registered for this game'.format(player.name))
+        return player
 
     @endpoints.method(request_message=NewGameRequest,
                       response_message=StringMessage,
@@ -169,11 +175,12 @@ class BattleshipAPI(remote.Service):
         # self._board_boundaries_check(request.piece_alignment.name, num_spaces, row_index, col_index)
 
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        player = self._get_user(request.player_name)
 
         # Raise error if all of the pieces for this player and this game have been placed already
         if game.game_started:
             raise endpoints.ConflictException('All of the pieces for this game have already been placed')
+
+        player = self._get_registered_player(game, request.player_name)
 
         # Get all coordinates of the piece based on it's starting coordinates and piece size
         if request.piece_alignment.name == 'vertical':
@@ -264,13 +271,10 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('This game has not started yet, all the pieces must first be loaded by both players')
 
         attacking_player = game.player_turn.get()
-        target_player = self._get_user(request.target_player)
+        target_player = self._get_registered_player(game, request.target_player)
 
         if attacking_player == target_player:
             raise endpoints.ConflictException('It is not this {}\'s turn'.format(target_player.name))
-
-        if target_player.key != game.player_one and target_player.key != game.player_two:
-            raise endpoints.ConflictException('{} is not registered for this game'.format(target_player.name))
 
         target_coord = request.coordinate.upper()
 
