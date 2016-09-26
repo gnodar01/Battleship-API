@@ -11,6 +11,11 @@ class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)
 
+class UserForm(messages.Message):
+    """Information for user"""
+    name = messages.StringField(1, required=True)
+    email = messages.StringField(2, required=True)
+
 class GameStatusMessage(messages.Message):
     """GameStatus-- outbound message describing a given game's current status"""
     player_one = messages.StringField(1, required=True)

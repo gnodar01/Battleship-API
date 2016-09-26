@@ -19,7 +19,7 @@ from google.appengine.api import memcache
 # from google.appengine.api import taskqueue
 
 from models.ndbModels import User, Game, Piece, Miss
-from models.protorpcModels import StringMessage, GameStatusMessage, UserGames, Ranking, Rankings, GameHistory, MoveDetails
+from models.protorpcModels import StringMessage, UserForm, GameStatusMessage, UserGames, Ranking, Rankings, GameHistory, MoveDetails
 from models.requests import (UserRequest, NewGameRequest, USER_GAMES_REQUEST, JOIN_GAME_REQUEST,
                              PLACE_PIECE_REQUEST, STRIKE_REQUEST, GAME_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
 from utils import get_by_urlsafe
@@ -45,6 +45,12 @@ class BattleshipAPI(remote.Service):
 
 # - - - - User Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _copy_user_to_form(self, user_obj):
+        user_form = UserForm()
+        setattr(user_form, 'name', getattr(user_obj, 'name'))
+        setattr(user_form, 'email', getattr(user_obj, 'email'))
+        return user_form
+
     def _get_user(self, username):
         """Takes in the name of a player/user, and returns a user query object"""
         user = User.query(User.name == username).get()
@@ -52,9 +58,8 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException('{} does not exist.'.format(username))
         return user
 
-
     @endpoints.method(request_message=UserRequest,
-                      response_message=StringMessage,
+                      response_message=UserForm,
                       path='user/new',
                       name='user.create_user',
                       http_method='POST')
@@ -72,8 +77,7 @@ class BattleshipAPI(remote.Service):
 
         user = User(name=request.user_name, email=request.email)
         user.put()
-        return StringMessage(message='User {} created!'.format(
-                request.user_name))
+        return self._copy_user_to_form(user)
 
 # - - - - Game Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
