@@ -32,6 +32,16 @@ class UserGames(messages.Message):
     """GamesStatusMessages on each of a user's games"""
     games = messages.MessageField(GameStatusMessage, 1, repeated=True)
 
+class Coordinate(messages.Message):
+    coordinate = messages.StringField(1, required=True)
+
+class PieceDetails(messages.Message):
+    """Details for a placed piece"""
+    game_key = messages.StringField(1, required=True)
+    owner = messages.StringField(2, required=True)
+    ship_type = messages.StringField(3, required=True)
+    coordinates = messages.MessageField(Coordinate, 4, repeated=True)
+
 class Ranking(messages.Message):
     """Ranking for a user"""
     username = messages.StringField(1, required=True)

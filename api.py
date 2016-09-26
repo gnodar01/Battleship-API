@@ -19,7 +19,7 @@ from google.appengine.api import memcache
 # from google.appengine.api import taskqueue
 
 from models.ndbModels import User, Game, Piece, Miss
-from models.protorpcModels import StringMessage, UserForm, GameStatusMessage, UserGames, Ranking, Rankings, GameHistory, MoveDetails
+from models.protorpcModels import StringMessage, UserForm, GameStatusMessage, UserGames, PieceDetails, Coordinate, Ranking, Rankings, GameHistory, MoveDetails
 from models.requests import (UserRequest, NewGameRequest, USER_GAMES_REQUEST, JOIN_GAME_REQUEST,
                              PLACE_PIECE_REQUEST, STRIKE_REQUEST, GAME_REQUEST, PLACE_DUMMY_PIECES_REQUEST)
 from utils import get_by_urlsafe
@@ -81,6 +81,21 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Game Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _copy_game_to_form(self, game_obj):
+        game_form = GameStatusMessage()
+        setattr(game_form, "game_key", str(game_obj.key.urlsafe()))
+        for field in game_form.all_fields():
+            if field.name == "player_one" or field.name == "player_two" or field.name == "player_turn" or field.name == "winner":
+                player_key = getattr(game_obj, field.name)
+                if player_key:
+                    player = player_key.get()
+                    setattr(game_form, field.name, player.name)
+                else:
+                    setattr(game_form, field.name, "None")
+            elif hasattr(game_obj, field.name):
+                setattr(game_form, field.name, str(getattr(game_obj, field.name)))
+        return game_form
+
     def _get_registered_player(self, game, username):
         player = self._get_user(username)
         if game.player_one != player.key and game.player_two != player.key:
@@ -88,7 +103,7 @@ class BattleshipAPI(remote.Service):
         return player
 
     @endpoints.method(request_message=NewGameRequest,
-                      response_message=StringMessage,
+                      response_message=GameStatusMessage,
                       path='game/new',
                       name='game.create_game',
                       http_method='POST')
@@ -101,15 +116,13 @@ class BattleshipAPI(remote.Service):
         if request.player_two_name:
             player_two = self._get_user(request.player_two_name)
             game = Game(player_one=player_one.key, player_turn=player_one.key, player_two=player_two.key)
-            game.put()
-            return StringMessage(message=str(game.key.urlsafe()))
         else:
             game = Game(player_one=player_one.key, player_turn=player_one.key)
-            game.put()
-            return StringMessage(message=str(game.key.urlsafe()))
+        game.put()
+        return self._copy_game_to_form(game)
 
     @endpoints.method(request_message=JOIN_GAME_REQUEST,
-                      response_message=StringMessage,
+                      response_message=GameStatusMessage,
                       path='game/join/{url_safe_game_key}',
                       name='game.join_game',
                       http_method='POST')
@@ -125,9 +138,17 @@ class BattleshipAPI(remote.Service):
                 raise endpoints.ConflictException('Player one and player two cannot be the same.')
             game.player_two = player_two.key
             game.put()
-        return StringMessage(message=str(game))
+        return self._copy_game_to_form(game)
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def _piece_details_to_form(self, game, user, piece):
+        piece_form = PieceDetails()
+        setattr(piece_form, 'game_key', game.key.urlsafe())
+        setattr(piece_form, 'owner', user.name)
+        setattr(piece_form, 'ship_type', piece.ship)
+        setattr(piece_form, 'coordinates', [Coordinate(coordinate=coord) for coord in piece.coordinates])
+        return piece_form
 
     def _coords_validity_check(self, row_coord, col_coord):
         """Raise errors if the row or column coordinates are not valid"""
@@ -184,7 +205,7 @@ class BattleshipAPI(remote.Service):
             game.put()
 
     @endpoints.method(request_message=PLACE_PIECE_REQUEST,
-                      response_message=StringMessage,
+                      response_message=PieceDetails,
                       path='game/place_piece/{url_safe_game_key}',
                       name='game.place_piece',
                       http_method='POST')
@@ -227,9 +248,20 @@ class BattleshipAPI(remote.Service):
         # Check if all pieces for this player & game have been placed
         self._update_game_started_status(game, player, player_pieces)
 
-        return StringMessage(message=str([piece.ship for piece in player_pieces]))
+        return self._piece_details_to_form(game, player, piece)
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def _copy_move_details_to_form(self, index, move):
+        move_details_form = MoveDetails()
+        setattr(move_details_form, "target_player_name", move['target_player'])
+        setattr(move_details_form, "attacking_player_name", move['attacking_player'])
+        setattr(move_details_form, "target_coordinate", move['target_coordinate'])
+        setattr(move_details_form, "status", move['status'])
+        setattr(move_details_form, "move_number", index+1)
+        if 'ship_type' in move:
+            setattr(move_details_form, "ship_type", move['ship_type'])
+        return move_details_form
 
     def _game_over_check(self, game):
         """Check if game has already ended"""
@@ -297,10 +329,10 @@ class BattleshipAPI(remote.Service):
             move_details['ship_type'] = piece_name
         game.history.append(move_details)
         game.put()
-
+        return move_details
 
     @endpoints.method(request_message=STRIKE_REQUEST,
-                      response_message=StringMessage,
+                      response_message=MoveDetails,
                       path='game/strike/{url_safe_game_key}',
                       name='game.strike_coordinate',
                       http_method='POST')
@@ -348,36 +380,19 @@ class BattleshipAPI(remote.Service):
                     game.winner = attacking_player.key
                     game.put()
                     # Log history of hit
-                    self._log_history(game, target_player, attacking_player, target_coord, 'Hit - Sunk Ship: Game Over', piece_name=piece.ship)
-                    return StringMessage(message="{} sunk, game over!".format(piece.ship))
+                    move_details = self._log_history(game, target_player, attacking_player, target_coord, 'Hit - Sunk Ship: Game Over', piece_name=piece.ship)
                 elif piece_sunk:
-                    self._log_history(game, target_player, attacking_player, target_coord, 'Hit - Sunk Ship', piece_name=piece.ship)
-                    return StringMessage(message="{} sunk!".format(piece.ship))
+                    move_details = self._log_history(game, target_player, attacking_player, target_coord, 'Hit - Sunk Ship', piece_name=piece.ship)
                 else:
-                    self._log_history(game, target_player, attacking_player, target_coord, 'Hit', piece_name=piece.ship)
-                    return StringMessage(message="Hit {}!".format(piece.ship))
+                    move_details = self._log_history(game, target_player, attacking_player, target_coord, 'Hit', piece_name=piece.ship)
+                return self._copy_move_details_to_form(len(game.history)-1, move_details)
 
         # If no ship is hit
-        self._log_history(game, target_player, attacking_player, target_coord, 'Miss')
+        move_details = self._log_history(game, target_player, attacking_player, target_coord, 'Miss')
         Miss(game=game.key, target_player=target_player.key, coordinate=target_coord).put()
-        return StringMessage(message="miss")
+        return self._copy_move_details_to_form(len(game.history)-1, move_details)
 
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _copy_game_to_form(self, game_obj):
-        game_form = GameStatusMessage()
-        setattr(game_form, "game_key", str( game_obj.key.urlsafe() ))
-        for field in game_form.all_fields():
-            if field.name == "player_one" or field.name == "player_two" or field.name == "player_turn" or field.name == "winner":
-                player_key = getattr(game_obj, field.name)
-                if player_key:
-                    player = player_key.get()
-                    setattr(game_form, field.name, player.name)
-                else:
-                    setattr(game_form, field.name, "None")
-            elif hasattr(game_obj, field.name):
-                setattr(game_form, field.name, str(getattr(game_obj, field.name)))
-        return game_form
 
     def _copy_ranking_to_form(self, index, user_scores):
         ranking_form = Ranking()
@@ -387,17 +402,6 @@ class BattleshipAPI(remote.Service):
         setattr(ranking_form, "games_lost", user_scores[2])
         setattr(ranking_form, "score", user_scores[3])
         return ranking_form
-
-    def _copy_move_details_to_form(self, index, game):
-        move_details_form = MoveDetails()
-        setattr(move_details_form, "target_player_name", game['target_player'])
-        setattr(move_details_form, "attacking_player_name", game['attacking_player'])
-        setattr(move_details_form, "target_coordinate", game['target_coordinate'])
-        setattr(move_details_form, "status", game['status'])
-        setattr(move_details_form, "move_number", index+1)
-        if 'ship_type' in game:
-            setattr(move_details_form, "ship_type", game['ship_type'])
-        return move_details_form
 
     @endpoints.method(request_message=GAME_REQUEST,
                       response_message=StringMessage,
@@ -542,7 +546,7 @@ class BattleshipAPI(remote.Service):
     def get_game_history(self, request):
         """Gets history of all moves played for a given game"""
         game_history = get_by_urlsafe(request.url_safe_game_key, Game).history
-        return GameHistory(moves=[self._copy_move_details_to_form(index, game) for index, game in enumerate(game_history)])
+        return GameHistory(moves=[self._copy_move_details_to_form(index, move) for index, move in enumerate(game_history)])
 
 # - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
 
