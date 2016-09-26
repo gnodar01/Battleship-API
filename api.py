@@ -404,20 +404,6 @@ class BattleshipAPI(remote.Service):
         return ranking_form
 
     @endpoints.method(request_message=GAME_REQUEST,
-                      response_message=StringMessage,
-                      path='game/coords/{url_safe_game_key}',
-                      name='game.get_coords',
-                      http_method='GET')
-    def get_coords(self, request):
-        """Get currently populated coordinates in a game by player"""
-        game = get_by_urlsafe(request.url_safe_game_key, Game)
-        p_one_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_one).fetch()
-        p_one_coords = [(piece.ship, piece.coordinates) for piece in p_one_pieces]
-        p_two_pieces = Piece.query().filter(Piece.game == game.key, Piece.player == game.player_two).fetch()
-        p_two_coords = [(piece.ship, piece.coordinates) for piece in p_two_pieces]
-        return StringMessage(message="Player one coordinates: {}; Player two coordinates: {}".format(str(p_one_coords), str(p_two_coords)))
-
-    @endpoints.method(request_message=GAME_REQUEST,
                       response_message=GameStatusMessage,
                       path='game/status/{url_safe_game_key}',
                       name='game.get_game_status',
@@ -548,49 +534,6 @@ class BattleshipAPI(remote.Service):
         game_history = get_by_urlsafe(request.url_safe_game_key, Game).history
         return GameHistory(moves=[self._copy_move_details_to_form(index, move) for index, move in enumerate(game_history)])
 
-# - - - temp api to place dummy pices in the datastore  - - - - - - - - - - - -
-
-    @endpoints.method(request_message=PLACE_DUMMY_PIECES_REQUEST,
-                      response_message=StringMessage,
-                      path='game/place_pieces/{url_safe_game_key}',
-                      name='game.place_dummy_pieces',
-                      http_method='POST')
-    def place_dummy_pieces(self, request):
-        """Place dummy pieces"""
-        players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
-        game = get_by_urlsafe(request.url_safe_game_key, Game)
-        pieces = [piece for piece in PIECES]
-        coord_set = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1','E2']]
-        for i in range(0,len(PIECES)):
-            for player in players:
-                Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coord_set[i]).put()
-        game.game_started = True
-        game.player_one_pieces_loaded = True
-        game.player_two_pieces_loaded = True
-        game.put()
-        return StringMessage(message=str(game.key.urlsafe()))
-
-    @endpoints.method(request_message=PLACE_DUMMY_PIECES_REQUEST,
-                      response_message=StringMessage,
-                      path='game/place_pieces/mostly_hit/{url_safe_game_key}',
-                      name='game.place_dummy_mostly_hit_pieces',
-                      http_method='POST')
-    def place_dummy_mostly_hit_pieces(self, request):
-        """Place dummy pieces"""
-        players = (User.query(User.name == request.player_one).get(), User.query(User.name == request.player_two).get())
-        game = get_by_urlsafe(request.url_safe_game_key, Game)
-        pieces = [piece for piece in PIECES]
-        coord_set = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1','E2']]
-        hits = [['A1','A2','A3','A4','A5'],['B1','B2','B3','B4'],['C1', 'C2', 'C3'],['D1','D2','D3'],['E1']]
-        sunk_status = [True,True,True,True,False]
-        for i in range(0,len(PIECES)):
-            for player in players:
-                Piece(game=game.key, player=player.key, ship=pieces[i], coordinates=coord_set[i], hit_marks=hits[i], sunk=sunk_status[i]).put()
-        game.game_started = True
-        game.player_one_pieces_loaded = True
-        game.player_two_pieces_loaded = True
-        game.put()
-        return StringMessage(message=str(game.key.urlsafe()))
 
     @staticmethod
     def _cache_average_moves():
@@ -604,7 +547,6 @@ class BattleshipAPI(remote.Service):
         average = float(sum_history) / num_games
         memcache.set(key='MOVES_PER_GAME',
                      value='The average moves per game is {:.2f}'.format(average))
-
 
 
 api = endpoints.api_server([BattleshipAPI])
