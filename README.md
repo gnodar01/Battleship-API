@@ -75,7 +75,9 @@ Exactly two players start and join a game. They must each load their own boards 
 
 - To create a new game, a `POST` request is sent to the `game.create_game` endpoint at `game/new`. `game/new` takes in two fields: `player_one_name`, which is required, and `player_two_name`, which is optional (a second player may join an open game at a later time). Both fields must be supplied with the usernames of registered users.
 
-- If a game was created with only one player, the `game.join_game` endpoint can be utilized at `game/join/**[game`s url-safe key]**`. `game.join_game` takes one field, `player_two_name`, a *string* of the name from a registered user.
+- If a game was created with only one player, the `game.join_game` endpoint may be utilized at `game/join/[game`s url-safe key]`. `game.join_game` takes one field, `player_two_name`, a *string* of the name from a registered user.
+
+- To cancel a game, the `game.cancel_game` endpoint may be utilized at `game/cancel/[game's url-safe key]` with a `GET` request. This endpoint takes in no fields. Once a game is cancelled, the game and all corresponding entities such as pieces and game history will be deleted.
 
 ## Endpoints
 
@@ -101,7 +103,7 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `player_one_name`: *String* (must be a registered user), Required
     - `player_two_name`: *String* (must be a registered user), Optional
   - Response fields:
-    - `player_one`: "[player one's name]""
+    - `player_one`: "[player one's name]"
     - `player_two`: "[player two's name]", if provided, or "None"
     - `player_one_pieces_loaded`: "False"
     - `player_two_pieces_loaded`: "False"
@@ -113,17 +115,24 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
 
 - battleship.join_game
   - Request type: `POST`
-  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/join/**[game's url-safe key]**`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/join/[game's url-safe key]`
   - Request fields:
     - `player_two_name`: *String* (must be a registered user), Required
   - Response fields:
-    - `player_one`: "**[player one's name]**""
-    - `player_two`: "**[player two's name]**"
+    - `player_one`: "[player one's name]"
+    - `player_two`: "[player two's name]"
     - `player_one_pieces_loaded`: "False"
     - `player_two_pieces_loaded`: "False"
     - `game_started`: "False"
-    - `player_turn`: "**[Player one's name]**"
+    - `player_turn`: "[Player one's name]"
     - `game_over`: "False"
     - `winner`: "None"
-    - `game_key`: "**[URL-safe game key]**" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
+    - `game_key`: "[URL-safe game key]" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
 
+- battleship.cancel_game
+  - Request Type: `GET`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/cancel/[game's url-safe key]`
+  - Request Fields:
+  	- None
+  - Response Fields:
+    - `message`: "Game deleted"
