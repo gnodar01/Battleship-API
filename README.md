@@ -67,11 +67,13 @@ There are 5 pieces
 
 - One 2 space ship - A Patrol Ship: `| O | O |`
 
-Exactly two players start and join a game. They must each load their own boards with each of the 5 pieces. Once all pieces, for both players, are loaded, they may begin the game. The player who's turn it is, must guess a coordinate, A1 - J10. If the coordinate the player guesses, contains a ship, that ship is struck. To completely sink a ship, a player must hit each of the available spaces belonging to that ship. After the player makes a move, it is thne the other player's turn to guess a coordinate. The first player to sink all 5 of the opposite player's ships, wins.
+Exactly two players start and join a game. They must each load their own boards with each of the 5 pieces. Once all pieces, for both players, are loaded, they may begin the game. The player who's turn it is, must guess a coordinate, A1 - J10. If the coordinate the player guesses, contains a ship, that ship is struck. To completely sink a ship, a player must hit each of the available spaces belonging to that ship. After the player makes a move, it is then the other player's turn to guess a coordinate. The first player to sink all 5 of the opposite player's ships wins.
 
 ## Instructions for using the Battleship API
 
-- To begin a game, there must be at least two players. To create a user account, you must send a `POST` request to the `user.create_user` endpoint at `/user/new`. `user.create_user` takes in an `email` field and `name` field, both of which are strings.
+- To begin a game, there must be at least two players. To create a user account, you must send a `POST` request to the `user.create_user` endpoint at `/user/new`. `user.create_user` takes in an `email` field and `name` field, both of which are *Strings*.
+
+- To create a new game, a `POST` request is sent to the `game.create_game` endpoint at `game/new`. `game/new` takes in two fields: `player_one_name`, which is required, and `player_two_name`, which is optional (a second player may join an open game at a later time). Both fields must be supplied with the usernames of registered users.
 
 ## Endpoints
 
@@ -83,6 +85,27 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
   - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/new`
   - Request fields:
-    - `name`: String
-    - `email`: String
+    - `name`: *String*, Required
+    - `email`: *String*, Required
+  - Response fields:
+    - `name`: "[player's name]"
+    - `email`: "[Player's e-mail]"
+
+
+- battleship.create_game
+  - Request type: `POST'
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/new`
+  - Request fields:
+    - `player_one_name`: *String* (must be a registered user), Required
+    - `player_two_name`: *String* (must be a registered user), Optional
+  - Response fields:
+    - `player_one`: "[player one's name]""
+    - `player_two`: "[player two's name]", if provided, or "None"
+    - `player_one_pieces_loaded`: "False"
+    - `player_two_pieces_loaded`: "False"
+    - `game_started`: "False"
+    - `player_turn`: "[Player one's name]"
+    - `game_over`: "False"
+    - `winner`: "None"
+    - `game_key`: "[URL-safe game key]" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
 
