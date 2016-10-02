@@ -67,3 +67,22 @@ There are 5 pieces
 
 - One 2 space ship - A Patrol Ship: `| O | O |`
 
+Exactly two players start and join a game. They must each load their own boards with each of the 5 pieces. Once all pieces, for both players, are loaded, they may begin the game. The player who's turn it is, must guess a coordinate, A1 - J10. If the coordinate the player guesses, contains a ship, that ship is struck. To completely sink a ship, a player must hit each of the available spaces belonging to that ship. After the player makes a move, it is thne the other player's turn to guess a coordinate. The first player to sink all 5 of the opposite player's ships, wins.
+
+## Instructions for using the Battleship API
+
+- To begin a game, there must be at least two players. To create a user account, you must send a `POST` request to the `user.create_user` endpoint at `/user/new`. `user.create_user` takes in an `email` field and `name` field, both of which are strings.
+
+## Endpoints
+
+### API Endpoint
+
+https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
+
+- battleship.create_user
+  - Request type: `POST`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/new`
+  - Request fields:
+    - `name`: String
+    - `email`: String
+
