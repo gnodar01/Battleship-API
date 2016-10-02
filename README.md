@@ -75,6 +75,8 @@ Exactly two players start and join a game. They must each load their own boards 
 
 - To create a new game, a `POST` request is sent to the `game.create_game` endpoint at `game/new`. `game/new` takes in two fields: `player_one_name`, which is required, and `player_two_name`, which is optional (a second player may join an open game at a later time). Both fields must be supplied with the usernames of registered users.
 
+- If a game was created with only one player, the `game.join_game` endpoint can be utilized at `game/join/**[game`s url-safe key]**`. `game.join_game` takes one field, `player_two_name`, a *string* of the name from a registered user.
+
 ## Endpoints
 
 ### API Endpoint
@@ -93,7 +95,7 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
 
 
 - battleship.create_game
-  - Request type: `POST'
+  - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/new`
   - Request fields:
     - `player_one_name`: *String* (must be a registered user), Required
@@ -108,4 +110,20 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `game_over`: "False"
     - `winner`: "None"
     - `game_key`: "[URL-safe game key]" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
+
+- battleship.join_game
+  - Request type: `POST`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/join/**[game's url-safe key]**`
+  - Request fields:
+    - `player_two_name`: *String* (must be a registered user), Required
+  - Response fields:
+    - `player_one`: "**[player one's name]**""
+    - `player_two`: "**[player two's name]**"
+    - `player_one_pieces_loaded`: "False"
+    - `player_two_pieces_loaded`: "False"
+    - `game_started`: "False"
+    - `player_turn`: "**[Player one's name]**"
+    - `game_over`: "False"
+    - `winner`: "None"
+    - `game_key`: "**[URL-safe game key]**" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
 
