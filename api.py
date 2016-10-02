@@ -394,8 +394,8 @@ class BattleshipAPI(remote.Service):
     def _double_miss_check(self, game, target_player, target_coord):
         """Ensure that the coordinate being struck has not previsouly
         been attempted and missed against target player for given game"""
-        misses = Miss.query(Miss.game == game.key)
-                     .filter(Miss.target_player == target_player.key).fetch()
+        misses = Miss.query(Miss.game == game.key).filter(
+            Miss.target_player == target_player.key).fetch()
         miss_coords = [missCoord.coordinate for missCoord in misses]
         if target_coord in miss_coords:
             raise endpoints.ConflictException(
@@ -410,9 +410,8 @@ class BattleshipAPI(remote.Service):
         game.put()
 
     def _game_over_status(self, game, target_player):
-        target_player_pieces = Piece.query(Piece.game == game.key)
-                                    .filter(Piece.player == target_player.key)
-                                    .fetch()
+        target_player_pieces = Piece.query(Piece.game == game.key).filter(
+                               Piece.player == target_player.key).fetch()
         for piece in target_player_pieces:
             if piece.sunk == False:
                 return game.game_over
@@ -469,9 +468,8 @@ class BattleshipAPI(remote.Service):
 
         self._coord_validity_check(target_coord)
         
-        target_player_pieces = Piece.query(Piece.game == game.key)
-                                    .filter(Piece.player == target_player.key)
-                                    .fetch()
+        target_player_pieces = Piece.query(Piece.game == game.key).filter(
+                               Piece.player == target_player.key).fetch()
 
         # Ensure a coordinate that has been
         # previously hit is not being hit again
@@ -595,8 +593,8 @@ class BattleshipAPI(remote.Service):
             if total_games <= 1:
                 score = win_diff / total_games
             else:
-                score = (win_diff / total_games) +
-                        (log(games_played, total_games))
+                score = ((win_diff / total_games) +
+                        (log(games_played, total_games)))
             rankings[user]['score'] = score
         return rankings
 
@@ -625,14 +623,15 @@ class BattleshipAPI(remote.Service):
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
                                        Game.player_two == user.key))
 
-        if request.include != None and
-           request.include.lower() in ['wins', 'losses']:
+        if (request.include != None and
+           request.include.lower() in ['wins', 'losses']):
             if request.include.lower() == 'wins':
-                user_games = user_games.filter(Game.winner == user.key)
-                                       .fetch()
+                user_games = user_games.filter(
+                             Game.winner == user.key).fetch()
             elif request.include.lower() == 'losses':
-                user_games = user_games.filter(Game.winner != user.key)
-                                       .filter(Game.winner != None).fetch()
+                user_games = user_games.filter(
+                             Game.winner != user.key).filter(
+                             Game.winner != None).fetch()
         else:
             user_games = user_games.fetch()
         return UserGames(games=[self._copy_game_to_form(game)
