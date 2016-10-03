@@ -89,8 +89,8 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
   - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/new`
   - Request fields:
-    - `name`: *String*, Required
-    - `email`: *String*, Required
+    - `name`
+    - `email`
   - Response fields:
     - `name`: "[player's name]"
     - `email`: "[Player's e-mail]"
@@ -100,8 +100,8 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
   - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/new`
   - Request fields:
-    - `player_one_name`: *String* (must be a registered user), Required
-    - `player_two_name`: *String* (must be a registered user), Optional
+    - `player_one_name` - must be a registered user
+    - `player_two_name` - *Opitional*, must be a registered user
   - Response fields:
     - `player_one`: "[player one's name]"
     - `player_two`: "[player two's name]", if provided, or "None"
@@ -113,11 +113,12 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `winner`: "None"
     - `game_key`: "[URL-safe game key]" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
 
+
 - battleship.join_game
   - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/join/[game's url-safe key]`
   - Request fields:
-    - `player_two_name`: *String* (must be a registered user), Required
+    - `player_two_name`: must be a registered user
   - Response fields:
     - `player_one`: "[player one's name]"
     - `player_two`: "[player two's name]"
@@ -127,12 +128,164 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `player_turn`: "[Player one's name]"
     - `game_over`: "False"
     - `winner`: "None"
-    - `game_key`: "[URL-safe game key]" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
+    - `game_key`: "[URL-safe game key]"
+
 
 - battleship.cancel_game
   - Request Type: `GET`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/cancel/[game's url-safe key]`
   - Request Fields:
-  	- None
+    - None
   - Response Fields:
     - `message`: "Game deleted"
+
+
+- battleship.place_piece
+  - Request Type: `POST`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/place_piece/[game's url-safe key]`
+  - Request Fields:
+    - `player_name` - must be registered user
+    - `piece_type` - lowercase only
+      - "aircraft_carrier"
+      - "battleship"
+      - "submarine"
+      - "destroyer"
+      - "patrol_ship"
+    - `piece_alignment` - lowercase only
+      - "horizontal"
+      - "vertical"
+    - `first_row_coordinate` - uppercase only
+      - "1" - "10"
+    - `first_column_coordinate`
+      - "A" - "J"
+  - Response Fields:
+    - `game_key` - game's url-safe key
+    - `owner` - "[player's name]"
+    - `ship_type`
+      - "aircraft_carrier"
+      - "battleship"
+      - "submarine"
+      - "destroyer"
+      - "patrol_ship"
+    - `coordinates` - *Array*
+      - `coordinate` - *Repeated*
+        - "A1" - "J10"
+
+
+- battleship.strike_coordinate
+  - Request Type: `POST`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/strike/[game's url-safe key]`
+  - Request Fields:
+    - `target_player`: "[name of user registered to game opposite of player attacking]"
+    - `coordinate`
+      - "A1" - "J10"
+  - Response Fields:
+    - `target_player_name`: "[name of user being attacked]"
+    - `attacking_player_name`: "[name of attacking user]"
+    - `target_coordinate`
+      - "A1" - "J10"
+    - `status`
+      - "Hit"
+      - "Hit - Sunk Ship"
+      - "Hit - Sunk Ship: Game Over"
+      - "Miss"
+    - `ship_type`
+      - "aircraft_carrier"
+      - "battleship"
+      - "submarine"
+      - "destroyer"
+      - "patrol_ship"
+    - `move_number` - *Integer*
+
+
+- battleship.get_game_status
+  - Request Type: `GET`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/status/[game's url-safe key]`
+  - Request Fields:
+    - None
+  - Response Fields:
+    - `player_one`: "[player one's name]"
+    - `player_two`: "[player two's name]"
+    - `player_one_pieces_loaded`
+      - "True"
+      - "False"
+    - `player_two_pieces_loaded`
+      - "True"
+      - "False"
+    - `game_started`
+      - "True"
+      - "False"
+    - `player_turn`: "[Player one's name]"
+    - `game_over`
+      - "True"
+      - "False"
+    - `winner`: "[user who won game]" or "None"
+    - `game_key`: "[URL-safe game key]"
+
+- battleship.get_user_games
+  - Request Type: `GET`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/games/[registered user's name]`
+  - Request Fields:
+    - `user_name`: "[registered user]"
+    - `include` - *Optional*
+      - "wins"
+      - "losses"
+  - Response Fields:
+    - `games` - *Array*
+      - `player_one`: "[player one's name]"
+      - `player_two`: "[player two's name]"
+      - `player_one_pieces_loaded`
+        - "True"
+        - "False"
+      - `player_two_pieces_loaded`
+        - "True"
+        - "False"
+      - `game_started`
+        - "True"
+        - "False"
+      - `player_turn`: "[Player one's name]"
+      - `game_over`
+        - "True"
+        - "False"
+      - `winner`: "[user who won game]" or "None"
+      - `game_key`: "[URL-safe game key]"
+
+- battleship.get_ranks
+  - Request Type: `GET`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/rankings`
+  - Request Fields:
+    - None
+  - Response Fields:
+    - `rankings` - *Array*
+      - `username`
+      - `ranking` - *Integer*
+      - `games_won` - *Integer*
+      - `games_lost` - *Integer*
+      - `score` - *Float*
+
+
+- battleship.get_game_history
+  - Request Type: `GET`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/history/[game's url-safe key]`
+  - Request Fields:
+    - None
+  - Response Fields:
+    - `moves` - *Array*
+      - `target_player_name`: "[name of user being attacked]"
+      - `attacking_player_name`: "[name of attacking user]"
+      - `target_coordinate`
+        - "A1" - "J10"
+      - `status`
+        - "Hit"
+        - "Hit - Sunk Ship"
+        - "Hit - Sunk Ship: Game Over"
+        - "Miss"
+      - `ship_type`
+        - "aircraft_carrier"
+        - "battleship"
+        - "submarine"
+        - "destroyer"
+        - "patrol_ship"
+      - `move_number` - *Integer*
+
+
