@@ -73,19 +73,41 @@ Exactly two players start and join a game. They must each load their own boards 
 
 - To begin a game, there must be at least two players. To create a user account, you must send a `POST` request to the `user.create_user` endpoint at `/user/new`. `user.create_user` takes in an `email` field and `name` field, both of which are *Strings*.
 
-- To create a new game, a `POST` request is sent to the `game.create_game` endpoint at `game/new`. `game/new` takes in two fields: `player_one_name`, which is required, and `player_two_name`, which is optional (a second player may join an open game at a later time). Both fields must be supplied with the usernames of registered users.
+- To create a new game, a `POST` request is sent to the `game.create_game` endpoint at `/game/new`. This endpoint takes in two fields: `player_one_name`, which is required, and `player_two_name`, which is optional (a second player may join an open game at a later time). Both fields must be supplied with the usernames of registered users.
 
-- If a game was created with only one player, the `game.join_game` endpoint may be utilized at `game/join/[game`s url-safe key]`. `game.join_game` takes one field, `player_two_name`, a *string* of the name from a registered user.
+- If a game was created with only one player, the `game.join_game` endpoint may be utilized at `/game/join/[game`s url-safe key]`. This endpoint takes one field, `player_two_name`, a *string* of the name from a registered user.
 
-- To cancel a game, the `game.cancel_game` endpoint may be utilized at `game/cancel/[game's url-safe key]` with a `GET` request. This endpoint takes in no fields. Once a game is cancelled, the game and all corresponding entities such as pieces and game history will be deleted.
+- To cancel a game, the `game.cancel_game` endpoint may be utilized at `/game/cancel/[game's url-safe key]` with a `GET` request. This endpoint takes in no fields. Once a game is cancelled, the game and all corresponding entities such as pieces and game history will be deleted.
 
-## Endpoints
+- To get the current status of a particular game, send a `GET` request to the `game.get_game_status` endpoint at `/game/status/[games' url-safe key]`. `game.get_game_status` takes no fields.
+
+- Once a game has two players assigned to it, pieces may be placed on the player's respective boards. To do this, send a `POST` request to the `game.place_piece` endpoint at `/game/place_piece/[games' url-safe key]`. Once all the pieces for both players have been placed, the games `game_started` status is set to 'True'. This endpoint takes 5 required fields:
+  - `player_name` is the user that the piece is being placed for. This user must be registered to the game that the url-safe key in teh url refers to.
+  - `piece_type` is the ship type being placed. The ship types include 'aircraft_carrier', 'battleship', 'submarine', 'destroyer', and 'patrol_ship'. No other input will be accepted.
+  - `piece_alignment` is the alignment of the ship piece on the game board. It may be 'vertcial' (ship takes up multiple rows) or 'horizontal' (ship takes up multiple columns). No other input will be accepted.
+  - `first_column_coordinate` is the column of the first coordinate the ship is being placed on. It may be any letter from 'A' to 'J'. No other letter may be used.
+  - `first_row_coordinate` is the row of the first coordinate the ship is being placed on. It may be any number from '1' - '10'. No other number may be used.
+
+- Once all pieces for a game have been placed, the game's `game_started` is set to 'True'. The game's two players can then begin to strike each other's boards. The game's `player_turn` referes to the player whos turn it is to attack the other player's board. `player_turn` is always set to `player_one` when a game first begins. To strike a player's board, a `POST` request should be sent to the `game.strike_coordinate` endpoint at `/game/strike/[game's url-safe key]`. The endpoint takes 2 fields:
+  - `target_player` is the player who's board is being attacked.
+  - `coordinate` is the coordiante being attacked. It must be a coordinate from "A1" to "J10". No other coordinate may be used.
+Once a coordinate is struck, the game's `player_turn` is set to the opposite player. That player may then strike then strike back. Once all of the spaces for a given ship are hit, that ship's `sunk` status is set to 'True'. The first player to sink all of the other player's ships wins the game. The game's `game_over` status is then set to 'True', and the game's `winner` is set to the winning player's name.
+
+- To get a list of a user's games, a `GET` request may be sent to the `game.get_user_games` at `/user/games/[registered user's name]`. The endpoint url also takes an optional `include` query parameter, which may be set to 'wins' or 'losses'. If set to 'wins', only games that the user has won will be returned. If set to 'losses', only games that the user has lost will be returned.
+
+- All moves during a game are recorded. To get a history of all of the moves made in a game, a `GET` request may be sent to the `game.get_game_history` endpoint at `/game/history/[game's url-safe key]`.
+
+- To get the current rankings of all users, a `GET` request should be sent to the `get_rankings` endpoint, at `/rankings`.
+
+
+## Endpoint Details
 
 ### API Endpoint
 
 https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
 
-- battleship.create_user
+
+- battleship.user.create_user
   - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/new`
   - Request fields:
@@ -96,7 +118,7 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `email`: "[Player's e-mail]"
 
 
-- battleship.create_game
+- battleship.game.create_game
   - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/new`
   - Request fields:
@@ -114,7 +136,7 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `game_key`: "[URL-safe game key]" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
 
 
-- battleship.join_game
+- battleship.game.join_game
   - Request type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/join/[game's url-safe key]`
   - Request fields:
@@ -131,7 +153,7 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `game_key`: "[URL-safe game key]"
 
 
-- battleship.cancel_game
+- battleship.game.cancel_game
   - Request Type: `GET`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/cancel/[game's url-safe key]`
   - Request Fields:
@@ -140,7 +162,32 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `message`: "Game deleted"
 
 
-- battleship.place_piece
+- battleship.game.get_game_status
+  - Request Type: `GET`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/status/[game's url-safe key]`
+  - Request Fields:
+    - None
+  - Response Fields:
+    - `player_one`: "[player one's name]"
+    - `player_two`: "[player two's name]"
+    - `player_one_pieces_loaded`
+      - "True"
+      - "False"
+    - `player_two_pieces_loaded`
+      - "True"
+      - "False"
+    - `game_started`
+      - "True"
+      - "False"
+    - `player_turn`: "[Player one's name]"
+    - `game_over`
+      - "True"
+      - "False"
+    - `winner`: "[user who won game]" or "None"
+    - `game_key`: "[URL-safe game key]"
+
+
+- battleship.game.place_piece
   - Request Type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/place_piece/[game's url-safe key]`
   - Request Fields:
@@ -154,10 +201,10 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `piece_alignment` - lowercase only
       - "horizontal"
       - "vertical"
-    - `first_row_coordinate` - uppercase only
-      - "1" - "10"
     - `first_column_coordinate`
       - "A" - "J"
+    - `first_row_coordinate` - uppercase only
+      - "1" - "10"
   - Response Fields:
     - `game_key` - game's url-safe key
     - `owner` - "[player's name]"
@@ -168,11 +215,11 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
       - "destroyer"
       - "patrol_ship"
     - `coordinates` - *Array*
-      - `coordinate` - *Repeated*
+      - `coordinate`
         - "A1" - "J10"
 
 
-- battleship.strike_coordinate
+- battleship.game.strike_coordinate
   - Request Type: `POST`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/strike/[game's url-safe key]`
   - Request Fields:
@@ -198,38 +245,11 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `move_number` - *Integer*
 
 
-- battleship.get_game_status
+- battleship.game.get_user_games
   - Request Type: `GET`
-  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/status/[game's url-safe key]`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/games/[registered user's name]?include=[Optional: wins or losses]`
   - Request Fields:
     - None
-  - Response Fields:
-    - `player_one`: "[player one's name]"
-    - `player_two`: "[player two's name]"
-    - `player_one_pieces_loaded`
-      - "True"
-      - "False"
-    - `player_two_pieces_loaded`
-      - "True"
-      - "False"
-    - `game_started`
-      - "True"
-      - "False"
-    - `player_turn`: "[Player one's name]"
-    - `game_over`
-      - "True"
-      - "False"
-    - `winner`: "[user who won game]" or "None"
-    - `game_key`: "[URL-safe game key]"
-
-- battleship.get_user_games
-  - Request Type: `GET`
-  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/games/[registered user's name]`
-  - Request Fields:
-    - `user_name`: "[registered user]"
-    - `include` - *Optional*
-      - "wins"
-      - "losses"
   - Response Fields:
     - `games` - *Array*
       - `player_one`: "[player one's name]"
@@ -250,21 +270,8 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
       - `winner`: "[user who won game]" or "None"
       - `game_key`: "[URL-safe game key]"
 
-- battleship.get_ranks
-  - Request Type: `GET`
-  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/rankings`
-  - Request Fields:
-    - None
-  - Response Fields:
-    - `rankings` - *Array*
-      - `username`
-      - `ranking` - *Integer*
-      - `games_won` - *Integer*
-      - `games_lost` - *Integer*
-      - `score` - *Float*
 
-
-- battleship.get_game_history
+- battleship.game.get_game_history
   - Request Type: `GET`
   - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/game/history/[game's url-safe key]`
   - Request Fields:
@@ -287,5 +294,19 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
         - "destroyer"
         - "patrol_ship"
       - `move_number` - *Integer*
+
+
+- battleship.get_rankings
+  - Request Type: `GET`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/rankings`
+  - Request Fields:
+    - None
+  - Response Fields:
+    - `rankings` - *Array*
+      - `username`
+      - `ranking` - *Integer*
+      - `games_won` - *Integer*
+      - `games_lost` - *Integer*
+      - `score` - *Float*
 
 
