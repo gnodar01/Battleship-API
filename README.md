@@ -91,8 +91,8 @@ Exactly two players start and join a game. They must each load their own boards 
 - Once all pieces for a game have been placed, the game's `game_started` is set to 'True'. The game's two players can then begin to strike each other's boards. The game's `player_turn` referes to the player whos turn it is to attack the other player's board. `player_turn` is always set to `player_one` when a game first begins. To strike a player's board, a `POST` request should be sent to the `game.strike_coordinate` endpoint at `/game/strike/[game's url-safe key]`. The endpoint takes 2 fields:
   - `target_player` is the player who's board is being attacked.
   - `coordinate` is the coordiante being attacked. It must be a coordinate from "A1" to "J10". No other coordinate may be used.
-  
-Once a coordinate is struck, the game's `player_turn` is set to the opposite player. That player may then strike then strike back. Once all of the spaces for a given ship are hit, that ship's `sunk` status is set to 'True'. The first player to sink all of the other player's ships wins the game. The game's `game_over` status is then set to 'True', and the game's `winner` is set to the winning player's name.
+
+  Once a coordinate is struck, the game's `player_turn` is set to the opposite player. That player may then strike then strike back. Once all of the spaces for a given ship are hit, that ship's `sunk` status is set to 'True'. The first player to sink all of the other player's ships wins the game. The game's `game_over` status is then set to 'True', and the game's `winner` is set to the winning player's name.
 
 - To get a list of a user's games, a `GET` request may be sent to the `game.get_user_games` at `/user/games/[registered user's name]`. The endpoint url also takes an optional `include` query parameter, which may be set to 'wins' or 'losses'. If set to 'wins', only games that the user has won will be returned. If set to 'losses', only games that the user has lost will be returned.
 
