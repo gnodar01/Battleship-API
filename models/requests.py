@@ -26,7 +26,7 @@ class Alignment(messages.Enum):
     vertical = 2
 
 class PlacePieceForm(messages.Message):
-    player_name = messages.StringField(1)
+    player_name = messages.StringField(1, required=True)
     piece_type = messages.EnumField(PieceType, 2, required=True) # PieceType can be string
     piece_alignment = messages.EnumField(Alignment, 3, required=True)
     first_row_coordinate = messages.StringField(4, required=True)
