@@ -9,22 +9,35 @@ api.py - Udacity conference server-side Python App Engine API;
 """
 
 from math import log
-import json
 from re import match
 
 import endpoints
 from google.appengine.ext import ndb
-from protorpc import remote, messages, message_types
+from protorpc import remote, message_types
 from google.appengine.api import memcache
 
 from models.ndbModels import User, Game, Piece, Miss
-from models.responses import (StringMessage, UserForm, GameStatusMessage,
-                              UserGames, PieceDetails, Coordinate, Ranking,
-                              Rankings, GameHistory, MoveDetails)
-from models.requests import (UserRequest, NewGameRequest, USER_GAMES_REQUEST,
-                             JOIN_GAME_REQUEST, PLACE_PIECE_REQUEST,
-                             STRIKE_REQUEST, GAME_REQUEST,
-                             PLACE_DUMMY_PIECES_REQUEST)
+from models.responses import (
+    StringMessage,
+    UserForm,
+    GameStatusMessage,
+    UserGames,
+    PieceDetails,
+    Coordinate,
+    Ranking,
+    Rankings,
+    GameHistory,
+    MoveDetails
+)
+from models.requests import (
+    UserRequest,
+    NewGameRequest,
+    USER_GAMES_REQUEST,
+    JOIN_GAME_REQUEST,
+    PLACE_PIECE_REQUEST,
+    STRIKE_REQUEST,
+    GAME_REQUEST
+)
 
 from utils import get_by_urlsafe
 
@@ -37,8 +50,8 @@ PIECES = {
     'patrol_ship': {'name': 'Patrol Ship', 'spaces': 2}
 }
 
-COLUMNS = ['A','B','C','D','E','F','G','H','I','J']
-ROWS = ['1','2','3','4','5','6','7','8','9','10']
+COLUMNS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+ROWS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 GRID = [(column + row) for column in COLUMNS for row in ROWS]
 
 
@@ -61,7 +74,7 @@ class BattleshipAPI(remote.Service):
         user = User.query(User.name == username).get()
         if not user:
             raise endpoints.ConflictException(
-                  '{} does not exist.'.format(username))
+                '{} does not exist.'.format(username))
         return user
 
     @endpoints.method(request_message=UserRequest,
@@ -103,7 +116,7 @@ class BattleshipAPI(remote.Service):
 
         for field in game_form.all_fields():
             if (field.name == "player_one" or field.name == "player_two" or
-                field.name == "player_turn" or field.name == "winner"):
+                    field.name == "player_turn" or field.name == "winner"):
 
                 player_key = getattr(game_obj, field.name)
 
@@ -115,7 +128,7 @@ class BattleshipAPI(remote.Service):
 
             elif hasattr(game_obj, field.name):
                 setattr(game_form, field.name,
-                    str(getattr(game_obj, field.name)))
+                        str(getattr(game_obj, field.name)))
 
         return game_form
 
@@ -180,7 +193,7 @@ class BattleshipAPI(remote.Service):
         setattr(piece_form, 'owner', user.name)
         setattr(piece_form, 'ship_type', piece.ship)
         setattr(piece_form, 'coordinates',
-            [Coordinate(coordinate=coord) for coord in piece.coordinates])
+                [Coordinate(coordinate=coord) for coord in piece.coordinates])
         return piece_form
 
     def _coords_validity_check(self, row_coord, col_coord):
@@ -200,14 +213,14 @@ class BattleshipAPI(remote.Service):
                                 col_index):
         """Raise errors if the peice is being placed outside of the bounds of
         the board"""
-        if (piece_alignment == 'vertical'
-            and row_index + num_spaces > len(ROWS)):
+        if (piece_alignment == 'vertical' and
+                row_index + num_spaces > len(ROWS)):
 
             raise endpoints.ConflictException(
                 'Your piece has gone past the boundaries of the board')
 
-        if (piece_alignment == 'horizontal'
-            and col_index + num_spaces > len(COLUMNS)):
+        if (piece_alignment == 'horizontal' and
+                col_index + num_spaces > len(COLUMNS)):
 
             raise endpoints.ConflictException(
                 'Your piece has gone past the boundaries of the board')
@@ -228,9 +241,9 @@ class BattleshipAPI(remote.Service):
         and piece size"""
         if piece_alignment == 'vertical':
             columns = [COLUMNS[col_index]]
-            rows = ROWS[row_index : row_index + num_spaces]
+            rows = ROWS[row_index: row_index + num_spaces]
         elif piece_alignment == 'horizontal':
-            columns = COLUMNS[col_index : col_index + num_spaces]
+            columns = COLUMNS[col_index: col_index + num_spaces]
             rows = [ROWS[row_index]]
         else:
             raise endpoints.ConflictException(
@@ -267,8 +280,8 @@ class BattleshipAPI(remote.Service):
             else:
                 game.player_two_pieces_loaded = True
             # Start game if all pieces for both players have been loaded
-            if (game.player_one_pieces_loaded == True and
-                game.player_two_pieces_loaded == True):
+            if (game.player_one_pieces_loaded is True and
+                    game.player_two_pieces_loaded is True):
                 game.game_started = True
             game.put()
 
@@ -316,7 +329,7 @@ class BattleshipAPI(remote.Service):
 
         player = self._get_registered_player(game, player_name)
         player_pieces = Piece.query(Piece.game == game.key).filter(
-                        Piece.player == player.key).fetch()
+            Piece.player == player.key).fetch()
 
         # Errors based on player's previously placed pieces for this game
         self._check_placement_validity(game,
@@ -341,29 +354,29 @@ class BattleshipAPI(remote.Service):
     def _copy_move_details_to_form(self, index, move):
         move_details_form = MoveDetails()
         setattr(move_details_form, "target_player_name",
-            move['target_player'])
+                move['target_player'])
         setattr(move_details_form, "attacking_player_name",
-            move['attacking_player'])
+                move['attacking_player'])
         setattr(move_details_form, "target_coordinate",
-            move['target_coordinate'])
+                move['target_coordinate'])
         setattr(move_details_form, "status",
-            move['status'])
+                move['status'])
         setattr(move_details_form, "move_number",
-            index+1)
+                index + 1)
         if 'ship_type' in move:
             setattr(move_details_form, "ship_type",
-                move['ship_type'])
+                    move['ship_type'])
         return move_details_form
 
     def _game_over_check(self, game):
         """Check if game has already ended"""
-        if game.game_over == True:
+        if game.game_over is True:
             raise endpoints.ConflictException(
                 'This game has already ended')
 
     def _game_started_check(self, game):
         """Ensure game has started"""
-        if game.game_started == False:
+        if game.game_started is False:
             raise endpoints.ConflictException(
                 '''This game has not started yet,
                 all the pieces must first be loaded by both players''')
@@ -411,9 +424,9 @@ class BattleshipAPI(remote.Service):
 
     def _game_over_status(self, game, target_player):
         target_player_pieces = Piece.query(Piece.game == game.key).filter(
-                               Piece.player == target_player.key).fetch()
+            Piece.player == target_player.key).fetch()
         for piece in target_player_pieces:
-            if piece.sunk == False:
+            if piece.sunk is False:
                 return game.game_over
         game.game_over = True
         game.put()
@@ -459,7 +472,7 @@ class BattleshipAPI(remote.Service):
 
         attacking_player = game.player_turn.get()
         target_player = self._get_registered_player(game,
-                        request.target_player)
+                                                    request.target_player)
 
         # Ensure attacking_player and target_player are NOT the same
         self._not_self_strike_check(game, target_player)
@@ -467,9 +480,9 @@ class BattleshipAPI(remote.Service):
         target_coord = request.coordinate.upper()
 
         self._coord_validity_check(target_coord)
-        
+
         target_player_pieces = Piece.query(Piece.game == game.key).filter(
-                               Piece.player == target_player.key).fetch()
+            Piece.player == target_player.key).fetch()
 
         # Ensure a coordinate that has been
         # previously hit is not being hit again
@@ -496,12 +509,12 @@ class BattleshipAPI(remote.Service):
                     game.put()
                     # Log history of hit
                     move_details = self._log_history(
-                                        game,
-                                        target_player,
-                                        attacking_player,
-                                        target_coord,
-                                        'Hit - Sunk Ship: Game Over',
-                                        piece_name=piece.ship)
+                        game,
+                        target_player,
+                        attacking_player,
+                        target_coord,
+                        'Hit - Sunk Ship: Game Over',
+                        piece_name=piece.ship)
                 elif piece_sunk:
                     move_details = self._log_history(game,
                                                      target_player,
@@ -537,7 +550,7 @@ class BattleshipAPI(remote.Service):
     def _copy_ranking_to_form(self, index, user_scores):
         ranking_form = Ranking()
         setattr(ranking_form, "username", user_scores[0])
-        setattr(ranking_form, "ranking", index+1)
+        setattr(ranking_form, "ranking", index + 1)
         setattr(ranking_form, "games_won", user_scores[1])
         setattr(ranking_form, "games_lost", user_scores[2])
         setattr(ranking_form, "score", user_scores[3])
@@ -623,15 +636,15 @@ class BattleshipAPI(remote.Service):
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
                                        Game.player_two == user.key))
 
-        if (request.include != None and
+        if (request.include is not None and
            request.include.lower() in ['wins', 'losses']):
             if request.include.lower() == 'wins':
                 user_games = user_games.filter(
-                             Game.winner == user.key).fetch()
+                    Game.winner == user.key).fetch()
             elif request.include.lower() == 'losses':
                 user_games = user_games.filter(
-                             Game.winner != user.key).filter(
-                             Game.winner != None).fetch()
+                    Game.winner != user.key).filter(
+                    Game.winner is not None).fetch()
         else:
             user_games = user_games.fetch()
         return UserGames(games=[self._copy_game_to_form(game)
@@ -664,7 +677,7 @@ class BattleshipAPI(remote.Service):
                       http_method='GET')
     def get_user_ranks(self, request):
         """Gets list of user rankings"""
-        completed_games = Game.query().filter(Game.game_over == True).fetch()
+        completed_games = Game.query().filter(Game.game_over is True).fetch()
         total_games = len(completed_games)
         if total_games == 0:
             raise endpoints.ConflictException('No games have been played')
@@ -685,11 +698,10 @@ class BattleshipAPI(remote.Service):
         return GameHistory(moves=[self._copy_move_details_to_form(index, move)
                            for index, move in enumerate(game_history)])
 
-
     @staticmethod
     def _cache_average_moves():
         """Populates memcache with the average number of moves per Game"""
-        games = Game.query(Game.game_over == True).fetch()
+        games = Game.query(Game.game_over is True).fetch()
         num_games = len(games)
         sum_history = 0
         for game in games:
@@ -702,4 +714,3 @@ class BattleshipAPI(remote.Service):
 
 
 api = endpoints.api_server([BattleshipAPI])
-

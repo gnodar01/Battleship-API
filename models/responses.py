@@ -1,16 +1,16 @@
-import random
-from datetime import date
-from protorpc import messages, message_types
+from protorpc import messages
 
 
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)
 
+
 class UserForm(messages.Message):
     """Information for user"""
     name = messages.StringField(1, required=True)
     email = messages.StringField(2, required=True)
+
 
 class GameStatusMessage(messages.Message):
     """GameStatus-- outbound message describing
@@ -25,12 +25,15 @@ class GameStatusMessage(messages.Message):
     game_key = messages.StringField(8, required=True)
     winner = messages.StringField(9, required=True)
 
+
 class UserGames(messages.Message):
     """GamesStatusMessages on each of a user's games"""
     games = messages.MessageField(GameStatusMessage, 1, repeated=True)
 
+
 class Coordinate(messages.Message):
     coordinate = messages.StringField(1, required=True)
+
 
 class PieceDetails(messages.Message):
     """Details for a placed piece"""
@@ -38,6 +41,7 @@ class PieceDetails(messages.Message):
     owner = messages.StringField(2, required=True)
     ship_type = messages.StringField(3, required=True)
     coordinates = messages.MessageField(Coordinate, 4, repeated=True)
+
 
 class Ranking(messages.Message):
     """Ranking for a user"""
@@ -47,9 +51,11 @@ class Ranking(messages.Message):
     games_lost = messages.IntegerField(4, required=True)
     score = messages.FloatField(5, required=True)
 
+
 class Rankings(messages.Message):
     """Rankings for each user"""
     rankings = messages.MessageField(Ranking, 1, repeated=True)
+
 
 class MoveDetails(messages.Message):
     """Details of a given move"""
@@ -60,7 +66,7 @@ class MoveDetails(messages.Message):
     ship_type = messages.StringField(5)
     move_number = messages.IntegerField(6, required=True)
 
+
 class GameHistory(messages.Message):
     """History of all moves played for a given game"""
     moves = messages.MessageField(MoveDetails, 1, repeated=True)
-

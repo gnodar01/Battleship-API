@@ -2,14 +2,12 @@
 
 """main.py - This file contains handlers that are called by taskqueue and/or
 cronjobs."""
-import logging
 
 import webapp2
 from google.appengine.api import mail, app_identity
 from google.appengine.ext import ndb
 from api import BattleshipAPI
 from models.ndbModels import Game, User
-from utils import get_by_urlsafe
 
 
 class SendReminderEmail(webapp2.RequestHandler):
@@ -18,8 +16,8 @@ class SendReminderEmail(webapp2.RequestHandler):
         if it's their turn to play"""
         app_id = app_identity.get_application_id()
         unfinished_games = Game.query(ndb.AND(
-                                     Game.game_started == True,
-                                     Game.game_over == False)).fetch()
+            Game.game_started is True,
+            Game.game_over is False)).fetch()
         users = {}
         for game in unfinished_games:
             user_id = game.player_turn.id()
@@ -33,15 +31,15 @@ class SendReminderEmail(webapp2.RequestHandler):
         for u_id in users:
             subject = 'This is a reminder!'
             body = '''Hello {}, you currently have {} Battle Ship
-                   games in progress!'''.format(
-                                        users[u_id]['name'],
-                                        users[u_id]['num_games_in_progress'])
+                games in progress!'''.format(
+                users[u_id]['name'], users[u_id]['num_games_in_progress'])
             # The arguments to send_mail are:
             # from, to, subject, body
             mail.send_mail('noreply@{}.appspotmail.com'.format(app_id),
                            users[u_id]['email'],
                            subject,
-                           body) 
+                           body)
+
 
 class UpdateAvgMovesPerGame(webapp2.RequestHandler):
     def post(self):
@@ -54,4 +52,3 @@ app = webapp2.WSGIApplication([
     ('/crons/send_reminder', SendReminderEmail),
     ('/tasks/cache_average_moves', UpdateAvgMovesPerGame),
 ], debug=True)
-
