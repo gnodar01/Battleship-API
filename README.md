@@ -77,7 +77,7 @@ Exactly two players start and join a game. They must each load their own boards 
 
 - If a game was created with only one player, the `game.join_game` endpoint may be utilized at `/game/join/[game`s url-safe key]`. This endpoint takes one field, `player_two_name`, a *string* of the name from a registered user.
 
-- To cancel a game, the `game.cancel_game` endpoint may be utilized at `/game/cancel/[game's url-safe key]` with a `GET` request. This endpoint takes in no fields. Once a game is cancelled, the game and all corresponding entities such as pieces and game history will be deleted.
+- To cancel a game, the `game.cancel_game` endpoint may be utilized at `/game/cancel/[game's url-safe key]` with a `GET` request. This endpoint takes in no fields. Once a game is cancelled, the game and all corresponding entities such as pieces and game history will be deleted. Only active games can be canceled. If a game is over, it cannot be canceled.
 
 - To get the current status of a particular game, send a `GET` request to the `game.get_game_status` endpoint at `/game/status/[games' url-safe key]`. `game.get_game_status` takes no fields.
 

@@ -648,14 +648,18 @@ class BattleshipAPI(remote.Service):
         """Cancels an active game"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
         if game:
-            game_pieces = Piece.query(Piece.game == game.key).fetch()
-            game_misses = Miss.query(Miss.game == game.key).fetch()
-            for piece in game_pieces:
-                piece.key.delete()
-            for miss in game_misses:
-                miss.key.delete()
-            game.key.delete()
-            return StringMessage(message="Game deleted")
+            if game.game_over is False:
+                game_pieces = Piece.query(Piece.game == game.key).fetch()
+                game_misses = Miss.query(Miss.game == game.key).fetch()
+                for piece in game_pieces:
+                    piece.key.delete()
+                for miss in game_misses:
+                    miss.key.delete()
+                game.key.delete()
+                return StringMessage(message="Game deleted")
+            else:
+                raise endpoints.ConflictException(
+                    'Cannot cancel game that has already ended.')
         else:
             return StringMessage(message="Game does not exist")
 
