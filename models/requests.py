@@ -58,6 +58,5 @@ STRIKE_REQUEST = endpoints.ResourceContainer(
     url_safe_game_key=messages.StringField(3, required=True))
 
 USER_GAMES_REQUEST = endpoints.ResourceContainer(
-    user_name=messages.StringField(1, required=True),
-    include=messages.StringField(2)
+    user_name=messages.StringField(1, required=True)
 )

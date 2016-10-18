@@ -94,7 +94,7 @@ Exactly two players start and join a game. They must each load their own boards 
 
   Once a coordinate is struck, the game's `player_turn` is set to the opposite player. That player may then strike then strike back. Once all of the spaces for a given ship are hit, that ship's `sunk` status is set to 'True'. The first player to sink all of the other player's ships wins the game. The game's `game_over` status is then set to 'True', and the game's `winner` is set to the winning player's name.
 
-- To get a list of a user's games, a `GET` request may be sent to the `game.get_user_games` at `/user/games/[registered user's name]`. The endpoint url also takes an optional `include` query parameter, which may be set to 'wins' or 'losses'. If set to 'wins', only games that the user has won will be returned. If set to 'losses', only games that the user has lost will be returned.
+- To get a list of a user's active games, a `GET` request may be sent to the `game.get_user_games` at `/user/games/[registered user's name]`. Only active games are returned. If the game is over, it will not be included in the response.
 
 - All moves during a game are recorded. To get a history of all of the moves made in a game, a `GET` request may be sent to the `game.get_game_history` endpoint at `/game/history/[game's url-safe key]`.
 
@@ -260,7 +260,7 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
 
 - battleship.game.get_user_games
   - Request Type: `GET`
-  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/games/[registered user's name]?include=[Optional: wins or losses]`
+  - URL: `https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1/user/games/[registered user's name]`
   - Request Fields:
     - None
   - Response Fields:
@@ -276,11 +276,11 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
       - `game_started`
         - "True"
         - "False"
-      - `player_turn`: "[Player one's name]"
-      - `game_over`
-        - "True"
-        - "False"
-      - `winner`: "[user who won game]" or "None"
+      - `player_turn`: 
+        - "[Player one's name]"
+        - "[Player two's name]"
+      - `game_over`: "False"
+      - `winner`: "None"
       - `game_key`: "[URL-safe game key]"
 
 

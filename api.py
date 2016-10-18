@@ -635,20 +635,9 @@ class BattleshipAPI(remote.Service):
         user = self._get_user(request.user_name)
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
                                        Game.player_two == user.key))
-
-        if (request.include is not None and
-           request.include.lower() in ['wins', 'losses']):
-            if request.include.lower() == 'wins':
-                user_games = user_games.filter(
-                    Game.winner == user.key).fetch()
-            elif request.include.lower() == 'losses':
-                user_games = user_games.filter(
-                    Game.winner != user.key).filter(
-                    Game.winner is not None).fetch()
-        else:
-            user_games = user_games.fetch()
+        active_games = user_games.filter(Game.game_over == False).fetch()
         return UserGames(games=[self._copy_game_to_form(game)
-                         for game in user_games])
+                         for game in active_games])
 
     @endpoints.method(request_message=GAME_REQUEST,
                       response_message=StringMessage,
@@ -677,7 +666,7 @@ class BattleshipAPI(remote.Service):
                       http_method='GET')
     def get_user_ranks(self, request):
         """Gets list of user rankings"""
-        completed_games = Game.query().filter(Game.game_over is True).fetch()
+        completed_games = Game.query().filter(Game.game_over == True).fetch()
         total_games = len(completed_games)
         if total_games == 0:
             raise endpoints.ConflictException('No games have been played')
@@ -701,7 +690,7 @@ class BattleshipAPI(remote.Service):
     @staticmethod
     def _cache_average_moves():
         """Populates memcache with the average number of moves per Game"""
-        games = Game.query(Game.game_over is True).fetch()
+        games = Game.query(Game.game_over == True).fetch()
         num_games = len(games)
         sum_history = 0
         for game in games:
