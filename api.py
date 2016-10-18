@@ -166,7 +166,7 @@ class BattleshipAPI(remote.Service):
                       response_message=GameStatusMessage,
                       path='game/join/{url_safe_game_key}',
                       name='game.join_game',
-                      http_method='POST')
+                      http_method='PUT')
     def join_game(self, request):
         """Join a game if not already full"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
@@ -643,7 +643,7 @@ class BattleshipAPI(remote.Service):
                       response_message=StringMessage,
                       path='game/cancel/{url_safe_game_key}',
                       name='game.cancel_game',
-                      http_method='GET')
+                      http_method='DELETE')
     def cancel_game(self, request):
         """Cancels an active game"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
