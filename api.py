@@ -11,7 +11,6 @@ api.py - Udacity conference server-side Python App Engine API;
 from math import log
 
 import endpoints
-from google.appengine.ext import ndb
 from protorpc import remote, message_types
 from google.appengine.api import memcache
 
@@ -22,7 +21,6 @@ from models.responses import (
     GameStatusMessage,
     UserGames,
     PieceDetails,
-    Ranking,
     Rankings,
     GameHistory,
     MoveDetails
