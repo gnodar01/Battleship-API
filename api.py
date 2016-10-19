@@ -47,7 +47,14 @@ from validators import (
     check_email,
     check_username_len,
     check_user_exists,
-    check_email_exists
+    check_email_exists,
+    check_players_unique,
+    check_game_open
+)
+
+from populate_form import (
+    copy_user_to_form,
+    copy_game_to_form
 )
 
 
@@ -85,39 +92,9 @@ class BattleshipAPI(remote.Service):
 
         user = User(name=request.user_name, email=request.email)
         user.put()
-        return self._copy_user_to_form(user)
+        return copy_user_to_form(user)
 
 # - - - - Game Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _copy_game_to_form(self, game_obj):
-        game_form = GameStatusMessage()
-
-        setattr(game_form, "game_key", str(game_obj.key.urlsafe()))
-
-        for field in game_form.all_fields():
-            if (field.name == "player_one" or field.name == "player_two" or
-                    field.name == "player_turn" or field.name == "winner"):
-
-                player_key = getattr(game_obj, field.name)
-
-                if player_key:
-                    player = player_key.get()
-                    setattr(game_form, field.name, player.name)
-                else:
-                    setattr(game_form, field.name, "None")
-
-            elif hasattr(game_obj, field.name):
-                setattr(game_form, field.name,
-                        str(getattr(game_obj, field.name)))
-
-        return game_form
-
-    def _get_registered_player(self, game, username):
-        player = get_user(username)
-        if game.player_one != player.key and game.player_two != player.key:
-            raise endpoints.ConflictException(
-                '{} is not registered for this game'.format(player.name))
-        return player
 
     @endpoints.method(request_message=NewGameRequest,
                       response_message=GameStatusMessage,
@@ -126,10 +103,7 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_game(self, request):
         """Create a new Game"""
-        if request.player_one_name == request.player_two_name:
-            raise endpoints.ConflictException(
-                'Player one cannot be the same as player two.')
-
+        check_players_unique(request.player_one_name, request.player_two_name)
         player_one = get_user(request.player_one_name)
 
         if request.player_two_name:
@@ -140,7 +114,7 @@ class BattleshipAPI(remote.Service):
         else:
             game = Game(player_one=player_one.key, player_turn=player_one.key)
         game.put()
-        return self._copy_game_to_form(game)
+        return copy_game_to_form(game)
 
     @endpoints.method(request_message=JOIN_GAME_REQUEST,
                       response_message=GameStatusMessage,
@@ -151,19 +125,16 @@ class BattleshipAPI(remote.Service):
         """Join a game if not already full"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
 
-        if game.player_two:
-            raise endpoints.ConflictException('This game is already full!')
-        else:
-            player_two = get_user(request.player_two_name)
-            player_one = game.player_one.get()
+        check_game_open(game)
 
-            if player_two == player_one:
-                raise endpoints.ConflictException(
-                    'Player one and player two cannot be the same.')
+        player_two = get_user(request.player_two_name)
+        player_one = game.player_one.get()
 
-            game.player_two = player_two.key
-            game.put()
-        return self._copy_game_to_form(game)
+        check_players_unique(player_one.name, player_two.name)
+
+        game.player_two = player_two.key
+        game.put()
+        return copy_game_to_form(game)
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
 
