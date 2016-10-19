@@ -54,7 +54,8 @@ from validators import (
     check_game_open,
     check_coords_validity,
     check_board_boundaries,
-    check_game_not_started
+    check_game_not_started,
+    check_placement_validity
 )
 
 from populate_form import (
@@ -144,27 +145,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _check_placement_validity(self,
-                                  game,
-                                  player_pieces,
-                                  piece_type,
-                                  piece_coords):
-        """Raise errors if piece placement is invalid:
-        if the piece has already been placed,
-        or if the piece being placed intersects with another piece"""
-        for placed_piece in player_pieces:
-            # Raise error if the piece has already been placed on the
-            # player's board
-            if placed_piece.ship == piece_type:
-                raise endpoints.ConflictException(
-                    'This piece has already been placed for this player')
-            # Raise error if piece intersects with any other piece
-            for placed_coordinate in placed_piece.coordinates:
-                if placed_coordinate in piece_coords:
-                    raise endpoints.ConflictException(
-                        'Your piece intersects with {}'
-                        .format(placed_coordinate))
-
     def _update_game_started_status(self, game, player, player_pieces):
         """Checks if all of the pieces for a given player are loaded,
         and if that is true for both of a Game's players, start the game"""
@@ -225,10 +205,10 @@ class BattleshipAPI(remote.Service):
             Piece.player == player.key).fetch()
 
         # Errors based on player's previously placed pieces for this game
-        self._check_placement_validity(game,
-                                       player_pieces,
-                                       piece_type,
-                                       coordinates)
+        check_placement_validity(game,
+                                 player_pieces,
+                                 piece_type,
+                                 coordinates)
 
         piece = Piece(game=game.key,
                       player=player.key,

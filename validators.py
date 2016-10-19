@@ -87,3 +87,24 @@ def check_piece_alignment(piece_alignment):
     if piece_alignment not in ['vertical', 'horizontal']:
         raise endpoints.ConflictException(
             '{} is not a valid piece alignment'.format(piece_alignment))
+
+
+def check_placement_validity(game,
+                             player_pieces,
+                             piece_type,
+                             piece_coords):
+    """Raise errors if piece placement is invalid:
+    if the piece has already been placed,
+    or if the piece being placed intersects with another piece"""
+    for placed_piece in player_pieces:
+        # Raise error if the piece has already been placed on the
+        # player's board
+        if placed_piece.ship == piece_type:
+            raise endpoints.ConflictException(
+                'This piece has already been placed for this player')
+        # Raise error if piece intersects with any other piece
+        for placed_coordinate in placed_piece.coordinates:
+            if placed_coordinate in piece_coords:
+                raise endpoints.ConflictException(
+                    'Your piece intersects with {}'
+                    .format(placed_coordinate))
