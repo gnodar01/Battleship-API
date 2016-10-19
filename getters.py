@@ -4,6 +4,7 @@ from google.appengine.ext import ndb
 import endpoints
 
 from models.ndbModels import User
+from validators import check_player_registered
 
 
 def get_by_urlsafe(urlsafe, model):
@@ -45,3 +46,9 @@ def get_user(username):
         raise endpoints.ConflictException(
             '{} does not exist.'.format(username))
     return user
+
+
+def get_registered_player(game, username):
+    player = get_user(username)
+    check_player_registered(game, player)
+    return player
