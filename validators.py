@@ -3,6 +3,10 @@ from re import match
 
 from models.ndbModels import User
 
+COLUMNS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+ROWS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+GRID = [(column + row) for column in COLUMNS for row in ROWS]
+
 
 def check_email(email):
     email_format_match = match(
@@ -45,3 +49,14 @@ def check_players_unique(player_one_name, player_two_name):
 def check_game_open(game):
     if game.player_two:
         raise endpoints.ConflictException('This game is already full!')
+
+
+def coords_validity_check(row_coord, col_coord):
+    """Raise errors if the row or column coordinates are not valid"""
+    if row_coord not in ROWS:
+        raise endpoints.ConflictException(
+            'Row coordinate must be between 1 - 10')
+
+    if col_coord not in COLUMNS:
+        raise endpoints.ConflictException(
+            'Column coordinate must be between A - J')

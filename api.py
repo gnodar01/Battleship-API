@@ -49,7 +49,8 @@ from validators import (
     check_user_exists,
     check_email_exists,
     check_players_unique,
-    check_game_open
+    check_game_open,
+    check_coords_validity
 )
 
 from populate_form import (
@@ -138,16 +139,6 @@ class BattleshipAPI(remote.Service):
         return copy_game_to_form(game)
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _coords_validity_check(self, row_coord, col_coord):
-        """Raise errors if the row or column coordinates are not valid"""
-        if row_coord not in ROWS:
-            raise endpoints.ConflictException(
-                'Row coordinate must be between 1 - 10')
-
-        if col_coord not in COLUMNS:
-            raise endpoints.ConflictException(
-                'Column coordinate must be between A - J')
 
     def _board_boundaries_check(self,
                                 piece_alignment,
@@ -243,8 +234,7 @@ class BattleshipAPI(remote.Service):
         url_safe_game_key = request.url_safe_game_key
 
         # Raise errors if the row or column coordinates are not valid
-        self._coords_validity_check(first_row_coordinate,
-                                    first_column_coordinate)
+        check_coords_validity(first_row_coordinate, first_column_coordinate)
 
         num_spaces = PIECES[piece_type]['spaces']
         row_index = ROWS.index(first_row_coordinate)
