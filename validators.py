@@ -51,7 +51,7 @@ def check_game_open(game):
         raise endpoints.ConflictException('This game is already full!')
 
 
-def coords_validity_check(row_coord, col_coord):
+def check_coords_validity(row_coord, col_coord):
     """Raise errors if the row or column coordinates are not valid"""
     if row_coord not in ROWS:
         raise endpoints.ConflictException(
@@ -60,3 +60,19 @@ def coords_validity_check(row_coord, col_coord):
     if col_coord not in COLUMNS:
         raise endpoints.ConflictException(
             'Column coordinate must be between A - J')
+
+
+def check_board_boundaries(piece_alignment, num_spaces, row_index, col_index):
+    """Raise errors if the peice is being placed outside of the bounds of
+    the board"""
+    if (piece_alignment == 'vertical' and
+            row_index + num_spaces > len(ROWS)):
+
+        raise endpoints.ConflictException(
+            'Your piece has gone past the boundaries of the board')
+
+    if (piece_alignment == 'horizontal' and
+            col_index + num_spaces > len(COLUMNS)):
+
+        raise endpoints.ConflictException(
+            'Your piece has gone past the boundaries of the board')

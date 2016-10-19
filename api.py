@@ -50,7 +50,8 @@ from validators import (
     check_email_exists,
     check_players_unique,
     check_game_open,
-    check_coords_validity
+    check_coords_validity,
+    check_board_boundaries
 )
 
 from populate_form import (
@@ -140,24 +141,24 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _board_boundaries_check(self,
-                                piece_alignment,
-                                num_spaces,
-                                row_index,
-                                col_index):
-        """Raise errors if the peice is being placed outside of the bounds of
-        the board"""
-        if (piece_alignment == 'vertical' and
-                row_index + num_spaces > len(ROWS)):
+    # def _board_boundaries_check(self,
+    #                             piece_alignment,
+    #                             num_spaces,
+    #                             row_index,
+    #                             col_index):
+    #     """Raise errors if the peice is being placed outside of the bounds of
+    #     the board"""
+    #     if (piece_alignment == 'vertical' and
+    #             row_index + num_spaces > len(ROWS)):
 
-            raise endpoints.ConflictException(
-                'Your piece has gone past the boundaries of the board')
+    #         raise endpoints.ConflictException(
+    #             'Your piece has gone past the boundaries of the board')
 
-        if (piece_alignment == 'horizontal' and
-                col_index + num_spaces > len(COLUMNS)):
+    #     if (piece_alignment == 'horizontal' and
+    #             col_index + num_spaces > len(COLUMNS)):
 
-            raise endpoints.ConflictException(
-                'Your piece has gone past the boundaries of the board')
+    #         raise endpoints.ConflictException(
+    #             'Your piece has gone past the boundaries of the board')
 
     def _game_not_started_check(self, game):
         """Raise error if all of the pieces for this player and this game have
@@ -242,10 +243,10 @@ class BattleshipAPI(remote.Service):
 
         # Raise errors if the peice is being placed outside
         # of the bounds of the board
-        self._board_boundaries_check(piece_alignment,
-                                     num_spaces,
-                                     row_index,
-                                     col_index)
+        check_board_boundaries(piece_alignment,
+                               num_spaces,
+                               row_index,
+                               col_index)
 
         # Get all coordinates of the piece based on it's
         # starting coordinates and piece size
