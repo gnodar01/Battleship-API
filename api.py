@@ -61,7 +61,7 @@ from validators import (
 from populate_form import (
     copy_user_to_form,
     copy_game_to_form,
-    piece_details_to_form
+    copy_piece_details_to_form
 )
 
 
@@ -220,7 +220,7 @@ class BattleshipAPI(remote.Service):
         # Check if all pieces for this player & game have been placed
         self._update_game_started_status(game, player, player_pieces)
 
-        return piece_details_to_form(game, player, piece)
+        return copy_piece_details_to_form(game, player, piece)
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
