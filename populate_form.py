@@ -3,7 +3,8 @@ from models.responses import (
     GameStatusMessage,
     PieceDetails,
     Coordinate,
-    MoveDetails
+    MoveDetails,
+    Ranking
 )
 
 
@@ -64,3 +65,13 @@ def copy_move_details_to_form(index, move):
         setattr(move_details_form, "ship_type",
                 move['ship_type'])
     return move_details_form
+
+
+def copy_ranking_to_form(index, user_scores):
+    ranking_form = Ranking()
+    setattr(ranking_form, "username", user_scores[0])
+    setattr(ranking_form, "ranking", index + 1)
+    setattr(ranking_form, "games_won", user_scores[1])
+    setattr(ranking_form, "games_lost", user_scores[2])
+    setattr(ranking_form, "score", user_scores[3])
+    return ranking_form

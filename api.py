@@ -68,7 +68,8 @@ from populate_form import (
     copy_user_to_form,
     copy_game_to_form,
     copy_piece_details_to_form,
-    copy_move_details_to_form
+    copy_move_details_to_form,
+    copy_ranking_to_form
 )
 
 
@@ -347,7 +348,7 @@ class BattleshipAPI(remote.Service):
                                                      'Hit',
                                                      piece_name=piece.ship)
                 return copy_move_details_to_form(len(game.history) - 1,
-                                                       move_details)
+                                                 move_details)
 
         # If no ship is hit
         move_details = self._log_history(game,
@@ -360,18 +361,9 @@ class BattleshipAPI(remote.Service):
              coordinate=target_coord).put()
 
         return copy_move_details_to_form(len(game.history) - 1,
-                                               move_details)
+                                         move_details)
 
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _copy_ranking_to_form(self, index, user_scores):
-        ranking_form = Ranking()
-        setattr(ranking_form, "username", user_scores[0])
-        setattr(ranking_form, "ranking", index + 1)
-        setattr(ranking_form, "games_won", user_scores[1])
-        setattr(ranking_form, "games_lost", user_scores[2])
-        setattr(ranking_form, "score", user_scores[3])
-        return ranking_form
 
     @endpoints.method(request_message=GAME_REQUEST,
                       response_message=GameStatusMessage,
@@ -494,7 +486,7 @@ class BattleshipAPI(remote.Service):
         win_loss = self._win_loss_list(completed_games)
         rankings = self._assign_rankings(win_loss, total_games)
         sorted_rankings = self._sort_rankings(rankings)
-        return Rankings(rankings=[self._copy_ranking_to_form(index, score)
+        return Rankings(rankings=[copy_ranking_to_form(index, score)
                         for index, score in enumerate(sorted_rankings)])
 
     @endpoints.method(request_message=GAME_REQUEST,
