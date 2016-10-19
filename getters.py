@@ -4,7 +4,8 @@ from google.appengine.ext import ndb
 import endpoints
 
 from models.ndbModels import User
-from validators import check_player_registered
+from validators import check_player_registered, check_piece_alignment
+from api import COLUMNS, ROWS
 
 
 def get_by_urlsafe(urlsafe, model):
@@ -52,3 +53,19 @@ def get_registered_player(game, username):
     player = get_user(username)
     check_player_registered(game, player)
     return player
+
+
+def _get_all_coords(piece_alignment,
+                    num_spaces,
+                    row_index,
+                    col_index):
+    """Get all coordinates of the piece based on it's starting coordinates
+    and piece size"""
+    check_piece_alignment(piece_alignment)
+    if piece_alignment == 'vertical':
+        columns = [COLUMNS[col_index]]
+        rows = ROWS[row_index: row_index + num_spaces]
+    elif piece_alignment == 'horizontal':
+        columns = COLUMNS[col_index: col_index + num_spaces]
+        rows = [ROWS[row_index]]
+    return [(col + row) for col in columns for row in rows]

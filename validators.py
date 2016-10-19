@@ -2,10 +2,7 @@ import endpoints
 from re import match
 
 from models.ndbModels import User
-
-COLUMNS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
-ROWS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-GRID = [(column + row) for column in COLUMNS for row in ROWS]
+from api import COLUMNS, ROWS
 
 
 def check_email(email):
@@ -84,3 +81,9 @@ def check_game_not_started(game):
     if game.game_started:
         raise endpoints.ConflictException(
             'All of the pieces for this game have already been placed')
+
+
+def check_piece_alignment(piece_alignment):
+    if piece_alignment not in ['vertical', 'horizontal']:
+        raise endpoints.ConflictException(
+            '{} is not a valid piece alignment'.format(piece_alignment))

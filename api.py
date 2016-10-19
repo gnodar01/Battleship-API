@@ -40,7 +40,8 @@ from models.requests import (
 
 from getters import (
     get_by_urlsafe,
-    get_user
+    get_user,
+    get_all_coords
 )
 
 from validators import (
@@ -142,24 +143,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _get_all_coords(self,
-                        piece_alignment,
-                        num_spaces,
-                        row_index,
-                        col_index):
-        """Get all coordinates of the piece based on it's starting coordinates
-        and piece size"""
-        if piece_alignment == 'vertical':
-            columns = [COLUMNS[col_index]]
-            rows = ROWS[row_index: row_index + num_spaces]
-        elif piece_alignment == 'horizontal':
-            columns = COLUMNS[col_index: col_index + num_spaces]
-            rows = [ROWS[row_index]]
-        else:
-            raise endpoints.ConflictException(
-                '{} is not a valid piece alignment'.format(piece_alignment))
-        return [(col + row) for col in columns for row in rows]
-
     def _check_placement_validity(self,
                                   game,
                                   player_pieces,
@@ -225,10 +208,10 @@ class BattleshipAPI(remote.Service):
 
         # Get all coordinates of the piece based on it's
         # starting coordinates and piece size
-        coordinates = self._get_all_coords(piece_alignment,
-                                           num_spaces,
-                                           row_index,
-                                           col_index)
+        coordinates = get_all_coords(piece_alignment,
+                                     num_spaces,
+                                     row_index,
+                                     col_index)
 
         game = get_by_urlsafe(url_safe_game_key, Game)
 
