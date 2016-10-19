@@ -54,7 +54,8 @@ from validators import (
 
 from populate_form import (
     copy_user_to_form,
-    copy_game_to_form
+    copy_game_to_form,
+    piece_details_to_form
 )
 
 
@@ -137,15 +138,6 @@ class BattleshipAPI(remote.Service):
         return copy_game_to_form(game)
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _piece_details_to_form(self, game, user, piece):
-        piece_form = PieceDetails()
-        setattr(piece_form, 'game_key', game.key.urlsafe())
-        setattr(piece_form, 'owner', user.name)
-        setattr(piece_form, 'ship_type', piece.ship)
-        setattr(piece_form, 'coordinates',
-                [Coordinate(coordinate=coord) for coord in piece.coordinates])
-        return piece_form
 
     def _coords_validity_check(self, row_coord, col_coord):
         """Raise errors if the row or column coordinates are not valid"""
@@ -298,7 +290,7 @@ class BattleshipAPI(remote.Service):
         # Check if all pieces for this player & game have been placed
         self._update_game_started_status(game, player, player_pieces)
 
-        return self._piece_details_to_form(game, player, piece)
+        return piece_details_to_form(game, player, piece)
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -515,7 +507,7 @@ class BattleshipAPI(remote.Service):
     def get_game_status(self, request):
         """Get a game's current status"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        return self._copy_game_to_form(game)
+        return copy_game_to_form(game)
 
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -587,7 +579,7 @@ class BattleshipAPI(remote.Service):
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
                                        Game.player_two == user.key))
         active_games = user_games.filter(Game.game_over == False).fetch()
-        return UserGames(games=[self._copy_game_to_form(game)
+        return UserGames(games=[copy_game_to_form(game)
                          for game in active_games])
 
     @endpoints.method(request_message=GAME_REQUEST,

@@ -1,6 +1,8 @@
 from models.responses import (
     UserForm,
-    GameStatusMessage
+    GameStatusMessage,
+    PieceDetails,
+    Coordinate
 )
 
 
@@ -33,3 +35,13 @@ def copy_game_to_form(game_obj):
                     str(getattr(game_obj, field.name)))
 
     return game_form
+
+
+def piece_details_to_form(game, user, piece):
+    piece_form = PieceDetails()
+    setattr(piece_form, 'game_key', game.key.urlsafe())
+    setattr(piece_form, 'owner', user.name)
+    setattr(piece_form, 'ship_type', piece.ship)
+    setattr(piece_form, 'coordinates',
+            [Coordinate(coordinate=coord) for coord in piece.coordinates])
+    return piece_form
