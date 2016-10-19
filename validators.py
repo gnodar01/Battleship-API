@@ -108,3 +108,10 @@ def check_placement_validity(game,
                 raise endpoints.ConflictException(
                     'Your piece intersects with {}'
                     .format(placed_coordinate))
+
+
+def check_game_not_over(game):
+    """Check if game has already ended"""
+    if game.game_over is True:
+        raise endpoints.ConflictException(
+            'This game has already ended')

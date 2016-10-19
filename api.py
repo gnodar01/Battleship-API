@@ -55,7 +55,8 @@ from validators import (
     check_coords_validity,
     check_board_boundaries,
     check_game_not_started,
-    check_placement_validity
+    check_placement_validity,
+    check_game_not_over
 )
 
 from populate_form import (
@@ -224,12 +225,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _game_over_check(self, game):
-        """Check if game has already ended"""
-        if game.game_over is True:
-            raise endpoints.ConflictException(
-                'This game has already ended')
-
     def _game_started_check(self, game):
         """Ensure game has started"""
         if game.game_started is False:
@@ -321,7 +316,7 @@ class BattleshipAPI(remote.Service):
         game = get_by_urlsafe(request.url_safe_game_key, Game)
 
         # Check if game has already ended
-        self._game_over_check(game)
+        check_game_not_over(game)
 
         # Ensure game has started
         self._game_started_check(game)
