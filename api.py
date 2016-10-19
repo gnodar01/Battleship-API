@@ -58,7 +58,8 @@ from validators import (
     check_placement_validity,
     check_game_not_over,
     check_game_started,
-    check_not_self_strike
+    check_not_self_strike,
+    check_coord_validity
 )
 
 from populate_form import (
@@ -227,13 +228,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _coord_validity_check(self, coord):
-        """Ensure passed in coordinate is a valid coordinate
-        for the Game Board"""
-        if coord not in GRID:
-            raise endpoints.ConflictException(
-                '{} is not a valid coordinate'.format(coord))
-
     def _double_hit_check(self, pieces, target_coord):
         """Check for ensuring a coordinate that has
         already been hit is not being hit again"""
@@ -318,7 +312,7 @@ class BattleshipAPI(remote.Service):
 
         target_coord = request.coordinate.upper()
 
-        self._coord_validity_check(target_coord)
+        check_coord_validity(target_coord)
 
         target_player_pieces = Piece.query(Piece.game == game.key).filter(
             Piece.player == target_player.key).fetch()

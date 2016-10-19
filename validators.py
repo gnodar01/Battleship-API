@@ -2,7 +2,7 @@ import endpoints
 from re import match
 
 from models.ndbModels import User
-from api import COLUMNS, ROWS
+from api import COLUMNS, ROWS, GRID
 
 
 def check_email(email):
@@ -131,3 +131,11 @@ def check_not_self_strike(game, target_player):
     if game.player_turn == target_player.key:
         raise endpoints.ConflictException(
             'It is {}\'s turn to strike'.format(target_player.name))
+
+
+def check_coord_validity(coord):
+    """Ensure passed in coordinate is a valid coordinate
+    for the Game Board"""
+    if coord not in GRID:
+        raise endpoints.ConflictException(
+            '{} is not a valid coordinate'.format(coord))
