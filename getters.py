@@ -3,7 +3,7 @@
 from google.appengine.ext import ndb
 import endpoints
 
-from models.ndbModels import User
+from models.ndbModels import Game, User
 from validators import check_player_registered, check_piece_alignment
 from api import COLUMNS, ROWS
 
@@ -69,3 +69,11 @@ def get_all_coords(piece_alignment,
         columns = COLUMNS[col_index: col_index + num_spaces]
         rows = [ROWS[row_index]]
     return [(col + row) for col in columns for row in rows]
+
+
+def get_user_games(user):
+    """Gets all games that a user has joined,
+    either as player one or player two"""
+    user_games = Game.query(ndb.OR(Game.player_one == user.key,
+                                   Game.player_two == user.key))
+    return user_games
