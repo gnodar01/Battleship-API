@@ -56,7 +56,9 @@ from validators import (
     check_board_boundaries,
     check_game_not_started,
     check_placement_validity,
-    check_game_not_over
+    check_game_not_over,
+    check_game_started,
+    check_not_self_strike
 )
 
 from populate_form import (
@@ -225,20 +227,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _game_started_check(self, game):
-        """Ensure game has started"""
-        if game.game_started is False:
-            raise endpoints.ConflictException(
-                '''This game has not started yet,
-                all the pieces must first be loaded by both players''')
-
-    def _not_self_strike_check(self, game, target_player):
-        """"Ensure the player who's turn it is to strike is
-        not the one being struck"""
-        if game.player_turn == target_player.key:
-            raise endpoints.ConflictException(
-                'It is {}\'s turn to strike'.format(target_player.name))
-
     def _coord_validity_check(self, coord):
         """Ensure passed in coordinate is a valid coordinate
         for the Game Board"""
@@ -319,14 +307,14 @@ class BattleshipAPI(remote.Service):
         check_game_not_over(game)
 
         # Ensure game has started
-        self._game_started_check(game)
+        check_game_started(game)
 
         attacking_player = game.player_turn.get()
         target_player = get_registered_player(game,
                                               request.target_player)
 
         # Ensure attacking_player and target_player are NOT the same
-        self._not_self_strike_check(game, target_player)
+        check_not_self_strike(game, target_player)
 
         target_coord = request.coordinate.upper()
 

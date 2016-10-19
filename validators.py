@@ -115,3 +115,19 @@ def check_game_not_over(game):
     if game.game_over is True:
         raise endpoints.ConflictException(
             'This game has already ended')
+
+
+def check_game_started(game):
+    """Ensure game has started"""
+    if game.game_started is False:
+        raise endpoints.ConflictException(
+            '''This game has not started yet,
+            all the pieces must first be loaded by both players''')
+
+
+def check_not_self_strike(game, target_player):
+    """"Ensure the player who's turn it is to strike is
+    not the one being struck"""
+    if game.player_turn == target_player.key:
+        raise endpoints.ConflictException(
+            'It is {}\'s turn to strike'.format(target_player.name))
