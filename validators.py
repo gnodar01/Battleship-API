@@ -139,3 +139,13 @@ def check_coord_validity(coord):
     if coord not in GRID:
         raise endpoints.ConflictException(
             '{} is not a valid coordinate'.format(coord))
+
+
+def check_not_double_hit(self, pieces, target_coord):
+    """Check for ensuring a coordinate that has
+    already been hit is not being hit again"""
+    pieces_hit_coords = [piece.hit_marks for piece in pieces]
+    for hit_coords in pieces_hit_coords:
+        if target_coord in hit_coords:
+            raise endpoints.ConflictException(
+                'This coordinate has already been hit')

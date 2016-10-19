@@ -59,7 +59,8 @@ from validators import (
     check_game_not_over,
     check_game_started,
     check_not_self_strike,
-    check_coord_validity
+    check_coord_validity,
+    check_not_double_hit
 )
 
 from populate_form import (
@@ -228,15 +229,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _double_hit_check(self, pieces, target_coord):
-        """Check for ensuring a coordinate that has
-        already been hit is not being hit again"""
-        pieces_hit_coords = [piece.hit_marks for piece in pieces]
-        for hit_coords in pieces_hit_coords:
-            if target_coord in hit_coords:
-                raise endpoints.ConflictException(
-                    'This coordinate has already been hit')
-
     def _double_miss_check(self, game, target_player, target_coord):
         """Ensure that the coordinate being struck has not previsouly
         been attempted and missed against target player for given game"""
@@ -319,7 +311,7 @@ class BattleshipAPI(remote.Service):
 
         # Ensure a coordinate that has been
         # previously hit is not being hit again
-        self._double_hit_check(target_player_pieces, target_coord)
+        check_not_double_hit(target_player_pieces, target_coord)
 
         # Coordinates that have been previously attempted and
         # missed against target player
