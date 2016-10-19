@@ -60,7 +60,8 @@ from validators import (
     check_game_started,
     check_not_self_strike,
     check_coord_validity,
-    check_not_double_hit
+    check_not_double_hit,
+    check_not_double_miss
 )
 
 from populate_form import (
@@ -229,16 +230,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _double_miss_check(self, game, target_player, target_coord):
-        """Ensure that the coordinate being struck has not previsouly
-        been attempted and missed against target player for given game"""
-        misses = Miss.query(Miss.game == game.key).filter(
-            Miss.target_player == target_player.key).fetch()
-        miss_coords = [missCoord.coordinate for missCoord in misses]
-        if target_coord in miss_coords:
-            raise endpoints.ConflictException(
-                'This coordinate has already been struck and missed')
-
     def _change_player_turn(self, game):
         """Changes game's current player to the other registered player"""
         if game.player_turn == game.player_one:
@@ -315,7 +306,7 @@ class BattleshipAPI(remote.Service):
 
         # Coordinates that have been previously attempted and
         # missed against target player
-        self._double_miss_check(game, target_player, target_coord)
+        check_not_double_miss(game, target_player, target_coord)
 
         # Change it to the other player's turn
         self._change_player_turn(game)

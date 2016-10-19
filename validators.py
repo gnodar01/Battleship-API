@@ -1,7 +1,7 @@
 import endpoints
 from re import match
 
-from models.ndbModels import User
+from models.ndbModels import User, Miss
 from api import COLUMNS, ROWS, GRID
 
 
@@ -141,7 +141,7 @@ def check_coord_validity(coord):
             '{} is not a valid coordinate'.format(coord))
 
 
-def check_not_double_hit(self, pieces, target_coord):
+def check_not_double_hit(pieces, target_coord):
     """Check for ensuring a coordinate that has
     already been hit is not being hit again"""
     pieces_hit_coords = [piece.hit_marks for piece in pieces]
@@ -149,3 +149,14 @@ def check_not_double_hit(self, pieces, target_coord):
         if target_coord in hit_coords:
             raise endpoints.ConflictException(
                 'This coordinate has already been hit')
+
+
+def check_not_double_miss(game, target_player, target_coord):
+    """Ensure that the coordinate being struck has not previsouly
+    been attempted and missed against target player for given game"""
+    misses = Miss.query(Miss.game == game.key).filter(
+        Miss.target_player == target_player.key).fetch()
+    miss_coords = [missCoord.coordinate for missCoord in misses]
+    if target_coord in miss_coords:
+        raise endpoints.ConflictException(
+            'This coordinate has already been struck and missed')
