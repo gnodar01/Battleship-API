@@ -22,12 +22,12 @@ from models.responses import (
     GameStatusMessage,
     UserGames,
     PieceDetails,
-    Coordinate,
     Ranking,
     Rankings,
     GameHistory,
     MoveDetails
 )
+
 from models.requests import (
     UserRequest,
     NewGameRequest,
@@ -41,6 +41,7 @@ from models.requests import (
 from getters import (
     get_by_urlsafe,
     get_user,
+    get_registered_player,
     get_all_coords
 )
 
@@ -219,7 +220,7 @@ class BattleshipAPI(remote.Service):
         # and this game have been placed already
         check_game_not_started(game)
 
-        player = self._get_registered_player(game, player_name)
+        player = get_registered_player(game, player_name)
         player_pieces = Piece.query(Piece.game == game.key).filter(
             Piece.player == player.key).fetch()
 
@@ -363,8 +364,8 @@ class BattleshipAPI(remote.Service):
         self._game_started_check(game)
 
         attacking_player = game.player_turn.get()
-        target_player = self._get_registered_player(game,
-                                                    request.target_player)
+        target_player = get_registered_player(game,
+                                              request.target_player)
 
         # Ensure attacking_player and target_player are NOT the same
         self._not_self_strike_check(game, target_player)
