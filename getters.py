@@ -71,9 +71,10 @@ def get_all_coords(piece_alignment,
     return [(col + row) for col in columns for row in rows]
 
 
-def get_user_games(user):
+def get_users_active_games(user):
     """Gets all games that a user has joined,
     either as player one or player two"""
     user_games = Game.query(ndb.OR(Game.player_one == user.key,
                                    Game.player_two == user.key))
-    return user_games
+    active_games = user_games.filter(Game.game_over == False).fetch()
+    return active_games

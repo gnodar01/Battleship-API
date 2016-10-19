@@ -43,7 +43,7 @@ from getters import (
     get_user,
     get_registered_player,
     get_all_coords,
-    get_user_games
+    get_users_active_games
 )
 
 from validators import (
@@ -443,8 +443,7 @@ class BattleshipAPI(remote.Service):
         """Returns all of a User's active games"""
         # it might make sense for each game to be a descendant of a User
         user = get_user(request.user_name)
-        user_games = get_user_games(user)
-        active_games = user_games.filter(Game.game_over == False).fetch()
+        active_games = get_users_active_games(user)
         return UserGames(games=[copy_game_to_form(game)
                          for game in active_games])
 
