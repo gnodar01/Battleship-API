@@ -2,7 +2,8 @@ from models.responses import (
     UserForm,
     GameStatusMessage,
     PieceDetails,
-    Coordinate
+    Coordinate,
+    MoveDetails
 )
 
 
@@ -45,3 +46,21 @@ def piece_details_to_form(game, user, piece):
     setattr(piece_form, 'coordinates',
             [Coordinate(coordinate=coord) for coord in piece.coordinates])
     return piece_form
+
+
+def copy_move_details_to_form(index, move):
+    move_details_form = MoveDetails()
+    setattr(move_details_form, "target_player_name",
+            move['target_player'])
+    setattr(move_details_form, "attacking_player_name",
+            move['attacking_player'])
+    setattr(move_details_form, "target_coordinate",
+            move['target_coordinate'])
+    setattr(move_details_form, "status",
+            move['status'])
+    setattr(move_details_form, "move_number",
+            index + 1)
+    if 'ship_type' in move:
+        setattr(move_details_form, "ship_type",
+                move['ship_type'])
+    return move_details_form

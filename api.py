@@ -224,23 +224,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _copy_move_details_to_form(self, index, move):
-        move_details_form = MoveDetails()
-        setattr(move_details_form, "target_player_name",
-                move['target_player'])
-        setattr(move_details_form, "attacking_player_name",
-                move['attacking_player'])
-        setattr(move_details_form, "target_coordinate",
-                move['target_coordinate'])
-        setattr(move_details_form, "status",
-                move['status'])
-        setattr(move_details_form, "move_number",
-                index + 1)
-        if 'ship_type' in move:
-            setattr(move_details_form, "ship_type",
-                    move['ship_type'])
-        return move_details_form
-
     def _game_over_check(self, game):
         """Check if game has already ended"""
         if game.game_over is True:
@@ -402,7 +385,7 @@ class BattleshipAPI(remote.Service):
                                                      target_coord,
                                                      'Hit',
                                                      piece_name=piece.ship)
-                return self._copy_move_details_to_form(len(game.history) - 1,
+                return copy_move_details_to_form(len(game.history) - 1,
                                                        move_details)
 
         # If no ship is hit
@@ -415,7 +398,7 @@ class BattleshipAPI(remote.Service):
              target_player=target_player.key,
              coordinate=target_coord).put()
 
-        return self._copy_move_details_to_form(len(game.history) - 1,
+        return copy_move_details_to_form(len(game.history) - 1,
                                                move_details)
 
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -561,7 +544,7 @@ class BattleshipAPI(remote.Service):
     def get_game_history(self, request):
         """Gets history of all moves played for a given game"""
         game_history = get_by_urlsafe(request.url_safe_game_key, Game).history
-        return GameHistory(moves=[self._copy_move_details_to_form(index, move)
+        return GameHistory(moves=[copy_move_details_to_form(index, move)
                            for index, move in enumerate(game_history)])
 
     @staticmethod
