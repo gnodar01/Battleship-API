@@ -9,7 +9,6 @@ api.py - Udacity conference server-side Python App Engine API;
 """
 
 from math import log
-from re import match
 
 import endpoints
 from google.appengine.ext import ndb
@@ -39,7 +38,14 @@ from models.requests import (
     GAME_REQUEST
 )
 
-from utils import get_by_urlsafe
+from getters import (
+    get_by_urlsafe,
+    get_user
+)
+
+from validators import (
+    check_email
+)
 
 
 PIECES = {
@@ -62,21 +68,6 @@ class BattleshipAPI(remote.Service):
 
 # - - - - User Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _copy_user_to_form(self, user_obj):
-        user_form = UserForm()
-        setattr(user_form, 'name', getattr(user_obj, 'name'))
-        setattr(user_form, 'email', getattr(user_obj, 'email'))
-        return user_form
-
-    def _get_user(self, username):
-        """Takes in the name of a player/user,
-        and returns a user query object"""
-        user = User.query(User.name == username).get()
-        if not user:
-            raise endpoints.ConflictException(
-                '{} does not exist.'.format(username))
-        return user
-
     @endpoints.method(request_message=UserRequest,
                       response_message=UserForm,
                       path='user/new',
@@ -84,12 +75,7 @@ class BattleshipAPI(remote.Service):
                       http_method='POST')
     def create_user(self, request):
         """Create a User. Requires a unique username"""
-        email_format_match = match(
-            r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)',
-            request.email)
-
-        if not email_format_match:
-            raise endpoints.ConflictException('E-mail is not valid')
+        check_email(request.email)
 
         if len(request.user_name) < 3:
             raise endpoints.ConflictException(
@@ -133,7 +119,7 @@ class BattleshipAPI(remote.Service):
         return game_form
 
     def _get_registered_player(self, game, username):
-        player = self._get_user(username)
+        player = get_user(username)
         if game.player_one != player.key and game.player_two != player.key:
             raise endpoints.ConflictException(
                 '{} is not registered for this game'.format(player.name))
@@ -150,10 +136,10 @@ class BattleshipAPI(remote.Service):
             raise endpoints.ConflictException(
                 'Player one cannot be the same as player two.')
 
-        player_one = self._get_user(request.player_one_name)
+        player_one = get_user(request.player_one_name)
 
         if request.player_two_name:
-            player_two = self._get_user(request.player_two_name)
+            player_two = get_user(request.player_two_name)
             game = Game(player_one=player_one.key,
                         player_turn=player_one.key,
                         player_two=player_two.key)
@@ -174,7 +160,7 @@ class BattleshipAPI(remote.Service):
         if game.player_two:
             raise endpoints.ConflictException('This game is already full!')
         else:
-            player_two = self._get_user(request.player_two_name)
+            player_two = get_user(request.player_two_name)
             player_one = game.player_one.get()
 
             if player_two == player_one:
@@ -632,7 +618,7 @@ class BattleshipAPI(remote.Service):
     def get_user_games(self, request):
         """Returns all of a User's active games"""
         # it might make sense for each game to be a descendant of a User
-        user = self._get_user(request.user_name)
+        user = get_user(request.user_name)
         user_games = Game.query(ndb.OR(Game.player_one == user.key,
                                        Game.player_two == user.key))
         active_games = user_games.filter(Game.game_over == False).fetch()

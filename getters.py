@@ -1,7 +1,9 @@
-"""utils.py - File for collecting general utility functions."""
+"""File for retrieving enteties and properties from datastore."""
 
 from google.appengine.ext import ndb
 import endpoints
+
+from models.ndbModels import User
 
 
 def get_by_urlsafe(urlsafe, model):
@@ -33,3 +35,13 @@ def get_by_urlsafe(urlsafe, model):
     if not isinstance(entity, model):
         raise ValueError('Incorrect Kind')
     return entity
+
+
+def get_user(username):
+    """Takes in the name of a player/user,
+    and returns a user query object"""
+    user = User.query(User.name == username).get()
+    if not user:
+        raise endpoints.ConflictException(
+            '{} does not exist.'.format(username))
+    return user
