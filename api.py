@@ -44,7 +44,10 @@ from getters import (
 )
 
 from validators import (
-    check_email
+    check_email,
+    check_username_len,
+    check_user_exists,
+    check_email_exists
 )
 
 
@@ -76,18 +79,9 @@ class BattleshipAPI(remote.Service):
     def create_user(self, request):
         """Create a User. Requires a unique username"""
         check_email(request.email)
-
-        if len(request.user_name) < 3:
-            raise endpoints.ConflictException(
-                'Username must be at least 3 characters')
-
-        if User.query(User.name == request.user_name).get():
-            raise endpoints.ConflictException(
-                'A User with that name already exists')
-
-        if User.query(User.email == request.email).get():
-            raise endpoints.ConflictException(
-                'A User with that E-Mail already exists')
+        check_username_len(request.user_name)
+        check_user_exists(request.user_name)
+        check_email_exists(request.email)
 
         user = User(name=request.user_name, email=request.email)
         user.put()
