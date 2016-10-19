@@ -55,10 +55,10 @@ def get_registered_player(game, username):
     return player
 
 
-def _get_all_coords(piece_alignment,
-                    num_spaces,
-                    row_index,
-                    col_index):
+def get_all_coords(piece_alignment,
+                   num_spaces,
+                   row_index,
+                   col_index):
     """Get all coordinates of the piece based on it's starting coordinates
     and piece size"""
     check_piece_alignment(piece_alignment)
