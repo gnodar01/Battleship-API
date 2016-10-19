@@ -51,7 +51,8 @@ from validators import (
     check_players_unique,
     check_game_open,
     check_coords_validity,
-    check_board_boundaries
+    check_board_boundaries,
+    check_game_not_started
 )
 
 from populate_form import (
@@ -140,32 +141,6 @@ class BattleshipAPI(remote.Service):
         return copy_game_to_form(game)
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    # def _board_boundaries_check(self,
-    #                             piece_alignment,
-    #                             num_spaces,
-    #                             row_index,
-    #                             col_index):
-    #     """Raise errors if the peice is being placed outside of the bounds of
-    #     the board"""
-    #     if (piece_alignment == 'vertical' and
-    #             row_index + num_spaces > len(ROWS)):
-
-    #         raise endpoints.ConflictException(
-    #             'Your piece has gone past the boundaries of the board')
-
-    #     if (piece_alignment == 'horizontal' and
-    #             col_index + num_spaces > len(COLUMNS)):
-
-    #         raise endpoints.ConflictException(
-    #             'Your piece has gone past the boundaries of the board')
-
-    def _game_not_started_check(self, game):
-        """Raise error if all of the pieces for this player and this game have
-        been placed already"""
-        if game.game_started:
-            raise endpoints.ConflictException(
-                'All of the pieces for this game have already been placed')
 
     def _get_all_coords(self,
                         piece_alignment,
@@ -259,7 +234,7 @@ class BattleshipAPI(remote.Service):
 
         # Raise error if all of the pieces for this player
         # and this game have been placed already
-        self._game_not_started_check(game)
+        check_game_not_started(game)
 
         player = self._get_registered_player(game, player_name)
         player_pieces = Piece.query(Piece.game == game.key).filter(

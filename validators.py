@@ -76,3 +76,11 @@ def check_board_boundaries(piece_alignment, num_spaces, row_index, col_index):
 
         raise endpoints.ConflictException(
             'Your piece has gone past the boundaries of the board')
+
+
+def check_game_not_started(game):
+    """Raise error if all of the pieces for this player and this game have
+    been placed already"""
+    if game.game_started:
+        raise endpoints.ConflictException(
+            'All of the pieces for this game have already been placed')
