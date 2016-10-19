@@ -67,7 +67,8 @@ from validators import (
 from populate_form import (
     copy_user_to_form,
     copy_game_to_form,
-    copy_piece_details_to_form
+    copy_piece_details_to_form,
+    copy_move_details_to_form
 )
 
 
