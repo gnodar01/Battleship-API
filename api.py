@@ -37,7 +37,7 @@ from models.requests import (
     GAME_REQUEST
 )
 
-from getters import (
+from utils.getters import (
     get_by_urlsafe,
     get_user,
     get_registered_player,
@@ -45,7 +45,7 @@ from getters import (
     get_users_active_games
 )
 
-from validators import (
+from utils.validators import (
     check_email,
     check_username_len,
     check_user_exists,
@@ -64,7 +64,7 @@ from validators import (
     check_not_double_miss
 )
 
-from populate_form import (
+from utils.populate_form import (
     copy_user_to_form,
     copy_game_to_form,
     copy_piece_details_to_form,
