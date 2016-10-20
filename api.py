@@ -15,6 +15,7 @@ from protorpc import remote, message_types
 from google.appengine.api import memcache
 
 from models.ndbModels import User, Game, Piece, Miss
+
 from models.responses import (
     StringMessage,
     UserForm,
