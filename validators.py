@@ -2,7 +2,7 @@ import endpoints
 from re import match
 
 from models.ndbModels import User, Miss
-from api import COLUMNS, ROWS, GRID
+from board import COLUMNS, ROWS, GRID
 
 
 def check_email(email):

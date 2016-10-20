@@ -5,7 +5,7 @@ import endpoints
 
 from models.ndbModels import Game, User
 from validators import check_player_registered, check_piece_alignment
-from api import COLUMNS, ROWS
+from board import COLUMNS, ROWS
 
 
 def get_by_urlsafe(urlsafe, model):
