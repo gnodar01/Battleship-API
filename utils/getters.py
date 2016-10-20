@@ -3,7 +3,7 @@
 from google.appengine.ext import ndb
 import endpoints
 
-from models.ndbModels import Game, User
+from models.ndbModels import Game, User, Piece, Miss
 from utils.validators import check_player_registered, check_piece_alignment
 from board import COLUMNS, ROWS
 
@@ -55,6 +55,11 @@ def get_registered_player(game, username):
     return player
 
 
+def get_players_pieces(game, player):
+    return Piece.query(Piece.game == game.key).filter(
+        Piece.player == player.key).fetch()
+
+
 def get_all_coords(piece_alignment,
                    num_spaces,
                    row_index,
@@ -78,3 +83,8 @@ def get_users_active_games(user):
                                    Game.player_two == user.key))
     active_games = user_games.filter(Game.game_over == False).fetch()
     return active_games
+
+
+def get_misses_on_player(game, player):
+    return Miss.query(Miss.game == game.key).filter(
+        Miss.target_player == player.key)
