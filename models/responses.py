@@ -57,6 +57,21 @@ class Rankings(messages.Message):
     rankings = messages.MessageField(Ranking, 1, repeated=True)
 
 
+class CoordStatus(messages.Enum):
+    """Coord Status"""
+    empty = 1
+    occupied = 2
+    miss = 3
+    hit = 4
+
+
+class CoordInfo(messages.Message):
+    """Columns"""
+    column = messages.StringField(1, required=True)
+    row = messages.StringField(2, required=True)
+    value = messages.EnumField(CoordStatus, 3)
+
+
 class MoveDetails(messages.Message):
     """Details of a given move"""
     target_player_name = messages.StringField(1, required=True)
@@ -65,6 +80,12 @@ class MoveDetails(messages.Message):
     status = messages.StringField(4, required=True)
     ship_type = messages.StringField(5)
     move_number = messages.IntegerField(6, required=True)
+    target_player_board_state = messages.MessageField(CoordInfo,
+                                                      7,
+                                                      repeated=True)
+    attacking_player_board_state = messages.MessageField(CoordInfo,
+                                                         8,
+                                                         repeated=True)
 
 
 class GameHistory(messages.Message):
