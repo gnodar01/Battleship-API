@@ -96,7 +96,7 @@ def get_stripped_coord(coord):
     return column, row
 
 
-def get_board_status(game, player):
+def get_board_state(game, player):
     player_pieces = get_players_pieces(game, player)
 
     player_board = {}
@@ -121,4 +121,4 @@ def get_board_status(game, player):
                 p_hit_coord)
             player_board[p_hit_coord_col][int(p_hit_coord_row) - 1] = "X"
 
-    print player_board
+    return player_board
