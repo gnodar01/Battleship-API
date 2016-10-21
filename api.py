@@ -43,9 +43,7 @@ from utils.getters import (
     get_registered_player,
     get_all_coords,
     get_users_active_games,
-    get_players_pieces,
-    get_misses_on_player,
-    get_board_status
+    get_board_state
 )
 
 from utils.validators import (
@@ -72,7 +70,8 @@ from utils.populate_form import (
     copy_game_to_form,
     copy_piece_details_to_form,
     copy_move_details_to_form,
-    copy_ranking_to_form
+    copy_ranking_to_form,
+    copy_board_state_to_form
 )
 
 from board import (
@@ -314,10 +313,24 @@ class BattleshipAPI(remote.Service):
             if target_coord in piece.coordinates:
                 piece.hit_marks.append(target_coord)
                 piece.put()
-                # check if piece sunk
+                # check if piece sunk and update datastore if so
                 piece_sunk = self._piece_sunk_status(piece)
-                # check if game_over
+                # check if game_over and update datastore if so
                 game_over = self._game_over_status(game, target_player)
+                # get players board states
+                attacking_player_board_state = get_board_state(
+                    game,
+                    attacking_player)
+                target_player_board_state = get_board_state(
+                    game,
+                    target_player)
+                # serialize the board states into protorpc forms
+                board_state_forms = {
+                    'attacking_player': copy_board_state_to_form(
+                        attacking_player_board_state),
+                    'target_player': copy_board_state_to_form(
+                        target_player_board_state)
+                }
                 if game_over:
                     game.winner = attacking_player.key
                     game.put()
@@ -344,7 +357,9 @@ class BattleshipAPI(remote.Service):
                                                      'Hit',
                                                      piece_name=piece.ship)
                 return copy_move_details_to_form(len(game.history) - 1,
-                                                 move_details)
+                                                 move_details,
+                                                 board_state_forms['target_player'],
+                                                 board_state_forms['attacking_player'])
 
         # If no ship is hit
         move_details = self._log_history(game,
@@ -356,8 +371,25 @@ class BattleshipAPI(remote.Service):
              target_player=target_player.key,
              coordinate=target_coord).put()
 
+        # get players board states
+        attacking_player_board_state = get_board_state(
+            game,
+            attacking_player)
+        target_player_board_state = get_board_state(
+            game,
+            target_player)
+        # serialize the board states into protorpc forms
+        board_state_forms = {
+            'attacking_player': copy_board_state_to_form(
+                attacking_player_board_state),
+            'target_player': copy_board_state_to_form(
+                target_player_board_state)
+        }
+
         return copy_move_details_to_form(len(game.history) - 1,
-                                         move_details)
+                                         move_details,
+                                         board_state_forms['target_player'],
+                                         board_state_forms['attacking_player'])
 
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -369,8 +401,8 @@ class BattleshipAPI(remote.Service):
     def get_game_status(self, request):
         """Get a game's current status"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        get_board_status(game, game.player_one.get())
-        get_board_status(game, game.player_two.get())
+        get_board_state(game, game.player_one.get())
+        get_board_state(game, game.player_two.get())
         return copy_game_to_form(game)
 
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -
