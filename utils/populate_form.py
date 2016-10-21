@@ -1,10 +1,14 @@
+from board import COLUMNS, ROWS
+
 from models.responses import (
     UserForm,
     GameStatusMessage,
     PieceDetails,
     Coordinate,
     MoveDetails,
-    Ranking
+    Ranking,
+    CoordInfo,
+    CoordStatus
 )
 
 
@@ -49,7 +53,10 @@ def copy_piece_details_to_form(game, user, piece):
     return piece_form
 
 
-def copy_move_details_to_form(index, move):
+def copy_move_details_to_form(index,
+                              move,
+                              target_player_board_state,
+                              attacking_player_board_state):
     move_details_form = MoveDetails()
     setattr(move_details_form, "target_player_name",
             move['target_player'])
@@ -61,6 +68,10 @@ def copy_move_details_to_form(index, move):
             move['status'])
     setattr(move_details_form, "move_number",
             index + 1)
+    setattr(move_details_form, "target_player_board_state",
+            target_player_board_state)
+    setattr(move_details_form, "attacking_player_board_state",
+            attacking_player_board_state)
     if 'ship_type' in move:
         setattr(move_details_form, "ship_type",
                 move['ship_type'])
@@ -75,3 +86,21 @@ def copy_ranking_to_form(index, user_scores):
     setattr(ranking_form, "games_lost", user_scores[2])
     setattr(ranking_form, "score", user_scores[3])
     return ranking_form
+
+
+def copy_board_state_to_form(board_state):
+    board_state_form = []
+    for col in COLUMNS:
+        for row in ROWS:
+            coord_info_form = CoordInfo(column=col, row=row)
+            coord_status = board_state[col][int(row) - 1]
+            if coord_status == 'E':
+                setattr(coord_info_form, 'value', CoordStatus('empty'))
+            elif coord_status == 'O':
+                setattr(coord_info_form, 'value', CoordStatus('occupied'))
+            elif coord_status == 'M':
+                setattr(coord_info_form, 'value', CoordStatus('miss'))
+            elif coord_status == 'X':
+                setattr(coord_info_form, 'value', CoordStatus('hit'))
+            board_state_form.append(coord_info_form)
+    return board_state_form
