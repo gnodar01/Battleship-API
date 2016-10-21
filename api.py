@@ -44,7 +44,8 @@ from utils.getters import (
     get_all_coords,
     get_users_active_games,
     get_players_pieces,
-    get_misses_on_player
+    get_misses_on_player,
+    get_board_status
 )
 
 from utils.validators import (
@@ -85,39 +86,6 @@ from board import (
 @endpoints.api(name='battle_ship', version='v1')
 class BattleshipAPI(remote.Service):
     """Battle Ship API"""
-
-    def _strip_coord(self, coord):
-        column = ''.join([i for i in coord if not i.isdigit()])
-        row = ''.join([i for i in coord if i.isdigit()])
-        return column, row
-
-    def _print_board_state(self, game):
-        player = game.player_one.get()
-        player_pieces = get_players_pieces(game, player)
-
-        player_board = {}
-        for col in COLUMNS:
-            player_board[col] = ["E" for i in range(0, len(ROWS))]
-
-        misses_on_player = get_misses_on_player(game, player)
-
-        for miss in misses_on_player:
-            miss_col, miss_row = self._strip_coord(miss.coordinate)
-            player_board[miss_col][int(miss_row) - 1] = "M"
-
-        for p in player_pieces:
-            p_coords = p.coordinates
-            for p_coord in p_coords:
-                p_col, p_row = self._strip_coord(p_coord)
-                player_board[p_col][int(p_row) - 1] = "O"
-
-            p_hit_coords = p.hit_marks
-            for p_hit_coord in p_hit_coords:
-                p_hit_coord_col, p_hit_coord_row = self._strip_coord(
-                    p_hit_coord)
-                player_board[p_hit_coord_col][int(p_hit_coord_row) - 1] = "X"
-
-        print player_board
 
 # - - - - User Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -401,7 +369,8 @@ class BattleshipAPI(remote.Service):
     def get_game_status(self, request):
         """Get a game's current status"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        self._print_board_state(game)
+        get_board_status(game, game.player_one.get())
+        get_board_status(game, game.player_two.get())
         return copy_game_to_form(game)
 
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -

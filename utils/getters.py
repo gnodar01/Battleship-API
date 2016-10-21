@@ -88,3 +88,37 @@ def get_users_active_games(user):
 def get_misses_on_player(game, player):
     return Miss.query(Miss.game == game.key).filter(
         Miss.target_player == player.key)
+
+
+def get_stripped_coord(coord):
+    column = ''.join([i for i in coord if not i.isdigit()])
+    row = ''.join([i for i in coord if i.isdigit()])
+    return column, row
+
+
+def get_board_status(game, player):
+    player_pieces = get_players_pieces(game, player)
+
+    player_board = {}
+    for col in COLUMNS:
+        player_board[col] = ["E" for i in range(0, len(ROWS))]
+
+    misses_on_player = get_misses_on_player(game, player)
+
+    for miss in misses_on_player:
+        miss_col, miss_row = get_stripped_coord(miss.coordinate)
+        player_board[miss_col][int(miss_row) - 1] = "M"
+
+    for p in player_pieces:
+        p_coords = p.coordinates
+        for p_coord in p_coords:
+            p_col, p_row = get_stripped_coord(p_coord)
+            player_board[p_col][int(p_row) - 1] = "O"
+
+        p_hit_coords = p.hit_marks
+        for p_hit_coord in p_hit_coords:
+            p_hit_coord_col, p_hit_coord_row = get_stripped_coord(
+                p_hit_coord)
+            player_board[p_hit_coord_col][int(p_hit_coord_row) - 1] = "X"
+
+    print player_board
