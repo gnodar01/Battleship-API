@@ -174,6 +174,16 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `game_over`: "False"
     - `winner`: "None"
     - `game_key`: "[URL-safe game key]"
+    - `player_one_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and an empty status for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "empty"
+    - `player_two_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and an empty status for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "empty"
 
 
 - battleship.game.cancel_game
@@ -208,6 +218,16 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
       - "False"
     - `winner`: "[user who won game]" or "None"
     - `game_key`: "[URL-safe game key]"
+    - `player_one_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "[empty, occupied, hit, miss]"
+    - `player_two_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "[empty, occupied, hit, miss]"
 
 
 - battleship.game.place_piece
@@ -240,6 +260,16 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `coordinates` - *Array*
       - `coordinate`
         - "A1" - "J10"
+    - `player_one_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "[empty, occupied, hit, miss]"
+    - `player_two_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "[empty, occupied, hit, miss]"
 
 
 - battleship.game.strike_coordinate
@@ -301,7 +331,16 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
       - `game_over`: "False"
       - `winner`: "None"
       - `game_key`: "[URL-safe game key]"
-
+      - `player_one_board_state` (Array of dicts)
+        - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+          - `column`: "[A-Z]"
+          - `row`: "[1-10]"
+          - `value`: "[empty, occupied, hit, miss]"
+      - `player_two_board_state` (Array of dicts)
+        - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+          - `column`: "[A-Z]"
+          - `row`: "[1-10]"
+          - `value`: "[empty, occupied, hit, miss]"
 
 - battleship.game.get_game_history
   - Request Type: `GET`
