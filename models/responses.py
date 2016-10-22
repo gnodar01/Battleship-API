@@ -66,6 +66,12 @@ class PieceDetails(messages.Message):
     owner = messages.StringField(2, required=True)
     ship_type = messages.StringField(3, required=True)
     coordinates = messages.MessageField(Coordinate, 4, repeated=True)
+    player_one_board_state = messages.MessageField(CoordInfo,
+                                                   10,
+                                                   repeated=True)
+    player_two_board_state = messages.MessageField(CoordInfo,
+                                                   11,
+                                                   repeated=True)
 
 
 class Ranking(messages.Message):
