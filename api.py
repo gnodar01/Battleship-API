@@ -108,6 +108,26 @@ class BattleshipAPI(remote.Service):
 
 # - - - - Game Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _get_board_state_forms(self, game, player_one, player_two):
+        # get both player's board states
+        player_one_board_state = get_board_state(
+            game,
+            player_one)
+        # serialize the board states into protorpc forms
+        board_state_forms = {
+            'player_one': copy_board_state_to_form(
+                player_one_board_state)
+        }
+        if player_two is not None:
+            player_two_board_state = get_board_state(
+                game,
+                player_two)
+            board_state_forms['player_two'] = copy_board_state_to_form(
+                player_two_board_state)
+        else:
+            board_state_forms['player_two'] = None
+        return board_state_forms
+
     @endpoints.method(request_message=NewGameRequest,
                       response_message=GameStatusMessage,
                       path='game/new',
@@ -124,9 +144,13 @@ class BattleshipAPI(remote.Service):
                         player_turn=player_one.key,
                         player_two=player_two.key)
         else:
+            player_two = None
             game = Game(player_one=player_one.key, player_turn=player_one.key)
         game.put()
-        return copy_game_to_form(game)
+        board_state_forms = self._get_board_state_forms(game,
+                                                        player_one,
+                                                        player_two)
+        return copy_game_to_form(game, board_state_forms)
 
     @endpoints.method(request_message=JOIN_GAME_REQUEST,
                       response_message=GameStatusMessage,
@@ -253,7 +277,7 @@ class BattleshipAPI(remote.Service):
         game.put()
         return game.game_over
 
-    def _get_board_state_forms(self, game, attacking_player, target_player):
+    def _strike_board_state_forms(self, game, attacking_player, target_player):
         # get both player's board states
         attacking_player_board_state = get_board_state(
             game,

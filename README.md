@@ -147,6 +147,16 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
     - `game_over`: "False"
     - `winner`: "None"
     - `game_key`: "[URL-safe game key]" (This should be stored, as it is the unique identifier needed to make any subsequent requests regarding this game specificially)
+    - `player_one_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and an empty status for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "empty"
+    - `player_two_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and an empty status for each coordinate. Will only be included if the optional `player_two_name` field was provided.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "empty"
 
 
 - battleship.game.join_game

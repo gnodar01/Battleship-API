@@ -19,14 +19,14 @@ def copy_user_to_form(user_obj):
     return user_form
 
 
-def copy_game_to_form(game_obj):
+def copy_game_to_form(game_obj, board_state_forms):
     game_form = GameStatusMessage()
 
-    setattr(game_form, "game_key", str(game_obj.key.urlsafe()))
+    setattr(game_form, 'game_key', str(game_obj.key.urlsafe()))
 
     for field in game_form.all_fields():
-        if (field.name == "player_one" or field.name == "player_two" or
-                field.name == "player_turn" or field.name == "winner"):
+        if (field.name == 'player_one' or field.name == 'player_two' or
+                field.name == 'player_turn' or field.name == 'winner'):
 
             player_key = getattr(game_obj, field.name)
 
@@ -34,11 +34,20 @@ def copy_game_to_form(game_obj):
                 player = player_key.get()
                 setattr(game_form, field.name, player.name)
             else:
-                setattr(game_form, field.name, "None")
+                setattr(game_form, field.name, 'None')
 
         elif hasattr(game_obj, field.name):
             setattr(game_form, field.name,
                     str(getattr(game_obj, field.name)))
+
+    setattr(game_form,
+            'player_one_board_state',
+            board_state_forms['player_one'])
+
+    if board_state_forms['player_two']:
+        setattr(game_form,
+                'player_two_board_state',
+                board_state_forms['player_two'])
 
     return game_form
 
