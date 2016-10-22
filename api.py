@@ -43,7 +43,10 @@ from utils.getters import (
     get_registered_player,
     get_all_coords,
     get_users_active_games,
-    get_board_state
+    get_board_state,
+    get_players_pieces,
+    get_move_log,
+    get_strike_status
 )
 
 from utils.validators import (
@@ -69,7 +72,7 @@ from utils.populate_form import (
     copy_user_to_form,
     copy_game_to_form,
     copy_piece_details_to_form,
-    copy_move_details_to_form,
+    copy_move_log_to_form,
     copy_ranking_to_form,
     copy_board_state_to_form
 )
@@ -81,7 +84,6 @@ from board import (
 )
 
 
-# TODO: Authentication for each of the methods
 @endpoints.api(name='battle_ship', version='v1')
 class BattleshipAPI(remote.Service):
     """Battle Ship API"""
@@ -235,38 +237,59 @@ class BattleshipAPI(remote.Service):
             game.player_turn = game.player_one
         game.put()
 
-    def _game_over_status(self, game, target_player):
-        target_player_pieces = Piece.query(Piece.game == game.key).filter(
-            Piece.player == target_player.key).fetch()
-        for piece in target_player_pieces:
-            if piece.sunk is False:
-                return game.game_over
-        game.game_over = True
-        game.put()
-        return game.game_over
-
-    def _piece_sunk_status(self, piece):
+    def _update_piece_sunk_status(self, piece):
         if sorted(piece.coordinates) == sorted(piece.hit_marks):
             piece.sunk = True
             piece.put()
         return piece.sunk
 
-    def _log_history(self,
-                     game,
-                     target_player,
-                     attacking_player,
-                     coord,
-                     status,
-                     piece_name=None):
-        move_details = {'target_player': target_player.name,
-                        'attacking_player': attacking_player.name,
-                        'target_coordinate': coord,
-                        'status': status}
-        if piece_name:
-            move_details['ship_type'] = piece_name
-        game.history.append(move_details)
+    def _update_game_over_status(self, game, attacking_player, target_player):
+        target_player_pieces = get_players_pieces(game, target_player)
+        for piece in target_player_pieces:
+            if piece.sunk is False:
+                return game.game_over
+        game.game_over = True
+        game.winner = attacking_player.key
         game.put()
-        return move_details
+        return game.game_over
+
+    def _get_board_state_forms(self, game, attacking_player, target_player):
+        # get both player's board states
+        attacking_player_board_state = get_board_state(
+            game,
+            attacking_player)
+        target_player_board_state = get_board_state(
+            game,
+            target_player)
+        # serialize the board states into protorpc forms
+        board_state_forms = {
+            'attacking_player': copy_board_state_to_form(
+                attacking_player_board_state),
+            'target_player': copy_board_state_to_form(
+                target_player_board_state)
+        }
+        return board_state_forms
+
+    def _log_history(self, game, attacking_player, target_player, move_log):
+        game.history.append(move_log)
+        game.put()
+        board_state_forms = self._get_board_state_forms(game,
+                                                        attacking_player,
+                                                        target_player)
+
+        return copy_move_log_to_form(len(game.history) - 1,
+                                     move_log,
+                                     board_state_forms['target_player'],
+                                     board_state_forms['attacking_player'])
+
+    def _log_hit(self, game, piece, target_coord):
+        piece.hit_marks.append(target_coord)
+        piece.put()
+
+    def _log_miss(self, game, attacking_player, target_player, target_coord):
+        Miss(game=game.key,
+             target_player=target_player.key,
+             coordinate=target_coord).put()
 
     @endpoints.method(request_message=STRIKE_REQUEST,
                       response_message=MoveDetails,
@@ -294,8 +317,7 @@ class BattleshipAPI(remote.Service):
 
         check_coord_validity(target_coord)
 
-        target_player_pieces = Piece.query(Piece.game == game.key).filter(
-            Piece.player == target_player.key).fetch()
+        target_player_pieces = get_players_pieces(game, target_player)
 
         # Ensure a coordinate that has been
         # previously hit is not being hit again
@@ -308,88 +330,43 @@ class BattleshipAPI(remote.Service):
         # Change it to the other player's turn
         self._change_player_turn(game)
 
+        # If a ship is hit
         for piece in target_player_pieces:
-            # If a ship is hit
             if target_coord in piece.coordinates:
-                piece.hit_marks.append(target_coord)
-                piece.put()
+                self._log_hit(game, piece, target_coord)
                 # check if piece sunk and update datastore if so
-                piece_sunk = self._piece_sunk_status(piece)
+                piece_sunk = self._update_piece_sunk_status(piece)
                 # check if game_over and update datastore if so
-                game_over = self._game_over_status(game, target_player)
-                # get players board states
-                attacking_player_board_state = get_board_state(
-                    game,
-                    attacking_player)
-                target_player_board_state = get_board_state(
-                    game,
-                    target_player)
-                # serialize the board states into protorpc forms
-                board_state_forms = {
-                    'attacking_player': copy_board_state_to_form(
-                        attacking_player_board_state),
-                    'target_player': copy_board_state_to_form(
-                        target_player_board_state)
-                }
-                if game_over:
-                    game.winner = attacking_player.key
-                    game.put()
-                    # Log history of hit
-                    move_details = self._log_history(
-                        game,
-                        target_player,
-                        attacking_player,
-                        target_coord,
-                        'Hit - Sunk Ship: Game Over',
-                        piece_name=piece.ship)
-                elif piece_sunk:
-                    move_details = self._log_history(game,
-                                                     target_player,
-                                                     attacking_player,
-                                                     target_coord,
-                                                     'Hit - Sunk Ship',
-                                                     piece_name=piece.ship)
-                else:
-                    move_details = self._log_history(game,
-                                                     target_player,
-                                                     attacking_player,
-                                                     target_coord,
-                                                     'Hit',
-                                                     piece_name=piece.ship)
-                return copy_move_details_to_form(len(game.history) - 1,
-                                                 move_details,
-                                                 board_state_forms['target_player'],
-                                                 board_state_forms['attacking_player'])
+                game_over = self._update_game_over_status(game,
+                                                          attacking_player,
+                                                          target_player)
+                strike_status = get_strike_status(game_over, piece_sunk)
+
+                move_log = get_move_log(target_player,
+                                        attacking_player,
+                                        target_coord,
+                                        strike_status,
+                                        piece_name=piece.ship)
+                return self._log_history(game,
+                                         attacking_player,
+                                         target_player,
+                                         move_log)
 
         # If no ship is hit
-        move_details = self._log_history(game,
-                                         target_player,
-                                         attacking_player,
-                                         target_coord,
-                                         'Miss')
-        Miss(game=game.key,
-             target_player=target_player.key,
-             coordinate=target_coord).put()
+        self._log_miss(game,
+                       attacking_player,
+                       target_player,
+                       target_coord)
 
-        # get players board states
-        attacking_player_board_state = get_board_state(
-            game,
-            attacking_player)
-        target_player_board_state = get_board_state(
-            game,
-            target_player)
-        # serialize the board states into protorpc forms
-        board_state_forms = {
-            'attacking_player': copy_board_state_to_form(
-                attacking_player_board_state),
-            'target_player': copy_board_state_to_form(
-                target_player_board_state)
-        }
+        move_log = get_move_log(target_player,
+                                attacking_player,
+                                target_coord,
+                                'Miss')
+        return self._log_history(game,
+                                 attacking_player,
+                                 target_player,
+                                 move_log)
 
-        return copy_move_details_to_form(len(game.history) - 1,
-                                         move_details,
-                                         board_state_forms['target_player'],
-                                         board_state_forms['attacking_player'])
 
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -522,7 +499,7 @@ class BattleshipAPI(remote.Service):
     def get_game_history(self, request):
         """Gets history of all moves played for a given game"""
         game_history = get_by_urlsafe(request.url_safe_game_key, Game).history
-        return GameHistory(moves=[copy_move_details_to_form(index, move)
+        return GameHistory(moves=[copy_move_log_to_form(index, move)
                            for index, move in enumerate(game_history)])
 
     @staticmethod

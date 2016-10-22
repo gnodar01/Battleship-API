@@ -53,29 +53,29 @@ def copy_piece_details_to_form(game, user, piece):
     return piece_form
 
 
-def copy_move_details_to_form(index,
-                              move,
-                              target_player_board_state,
-                              attacking_player_board_state):
-    move_details_form = MoveDetails()
-    setattr(move_details_form, "target_player_name",
+def copy_move_log_to_form(index,
+                          move,
+                          target_player_board_state,
+                          attacking_player_board_state):
+    move_log_form = MoveDetails()
+    setattr(move_log_form, "target_player_name",
             move['target_player'])
-    setattr(move_details_form, "attacking_player_name",
+    setattr(move_log_form, "attacking_player_name",
             move['attacking_player'])
-    setattr(move_details_form, "target_coordinate",
+    setattr(move_log_form, "target_coordinate",
             move['target_coordinate'])
-    setattr(move_details_form, "status",
+    setattr(move_log_form, "status",
             move['status'])
-    setattr(move_details_form, "move_number",
+    setattr(move_log_form, "move_number",
             index + 1)
-    setattr(move_details_form, "target_player_board_state",
+    setattr(move_log_form, "target_player_board_state",
             target_player_board_state)
-    setattr(move_details_form, "attacking_player_board_state",
+    setattr(move_log_form, "attacking_player_board_state",
             attacking_player_board_state)
     if 'ship_type' in move:
-        setattr(move_details_form, "ship_type",
+        setattr(move_log_form, "ship_type",
                 move['ship_type'])
-    return move_details_form
+    return move_log_form
 
 
 def copy_ranking_to_form(index, user_scores):

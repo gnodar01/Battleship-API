@@ -60,6 +60,20 @@ def get_players_pieces(game, player):
         Piece.player == player.key).fetch()
 
 
+def get_move_log(target_player,
+                 attacking_player,
+                 target_coord,
+                 status,
+                 piece_name=None):
+    move_log = {'target_player': target_player.name,
+                'attacking_player': attacking_player.name,
+                'target_coordinate': target_coord,
+                'status': status}
+    if piece_name:
+        move_log['ship_type'] = piece_name
+    return move_log
+
+
 def get_all_coords(piece_alignment,
                    num_spaces,
                    row_index,
@@ -94,6 +108,15 @@ def get_stripped_coord(coord):
     column = ''.join([i for i in coord if not i.isdigit()])
     row = ''.join([i for i in coord if i.isdigit()])
     return column, row
+
+
+def get_strike_status(game_over_status, piece_sunk_status):
+    if game_over_status is True:
+        return 'Hit - Sunk Ship: Game Over'
+    elif piece_sunk_status is True:
+        return 'Hit - Sunk Ship'
+    else:
+        return 'Hit'
 
 
 def get_board_state(game, player):
