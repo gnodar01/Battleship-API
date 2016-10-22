@@ -12,6 +12,25 @@ class UserForm(messages.Message):
     email = messages.StringField(2, required=True)
 
 
+class CoordStatus(messages.Enum):
+    """Enumurable for CoordInfo's value property, a
+    given coordinate may ony have a state of empty,
+    occupied miss or hit"""
+    empty = 1
+    occupied = 2
+    miss = 3
+    hit = 4
+
+
+class CoordInfo(messages.Message):
+    """Describes the state of a Coordinate, the Column letter,
+    the Row number, and the current state empty, occupied,
+    miss or hit"""
+    column = messages.StringField(1, required=True)
+    row = messages.StringField(2, required=True)
+    value = messages.EnumField(CoordStatus, 3)
+
+
 class GameStatusMessage(messages.Message):
     """GameStatus-- outbound message describing
     a given game's current status"""
@@ -24,6 +43,12 @@ class GameStatusMessage(messages.Message):
     game_over = messages.StringField(7, required=True)
     game_key = messages.StringField(8, required=True)
     winner = messages.StringField(9, required=True)
+    player_one_board_state = messages.MessageField(CoordInfo,
+                                                   10,
+                                                   repeated=True)
+    player_two_board_state = messages.MessageField(CoordInfo,
+                                                   11,
+                                                   repeated=True)
 
 
 class UserGames(messages.Message):
@@ -55,21 +80,6 @@ class Ranking(messages.Message):
 class Rankings(messages.Message):
     """Rankings for each user"""
     rankings = messages.MessageField(Ranking, 1, repeated=True)
-
-
-class CoordStatus(messages.Enum):
-    """Coord Status"""
-    empty = 1
-    occupied = 2
-    miss = 3
-    hit = 4
-
-
-class CoordInfo(messages.Message):
-    """Columns"""
-    column = messages.StringField(1, required=True)
-    row = messages.StringField(2, required=True)
-    value = messages.EnumField(CoordStatus, 3)
 
 
 class MoveDetails(messages.Message):
