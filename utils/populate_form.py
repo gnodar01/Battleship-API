@@ -52,20 +52,26 @@ def copy_game_to_form(game_obj, board_state_forms):
     return game_form
 
 
-def copy_piece_details_to_form(game, user, piece):
+def copy_piece_details_to_form(game, user, piece, board_state_forms):
     piece_form = PieceDetails()
     setattr(piece_form, 'game_key', game.key.urlsafe())
     setattr(piece_form, 'owner', user.name)
     setattr(piece_form, 'ship_type', piece.ship)
     setattr(piece_form, 'coordinates',
             [Coordinate(coordinate=coord) for coord in piece.coordinates])
+    setattr(piece_form,
+            'player_one_board_state',
+            board_state_forms['player_one'])
+    setattr(piece_form,
+            'player_two_board_state',
+            board_state_forms['player_two'])
     return piece_form
 
 
 def copy_move_log_to_form(index,
                           move,
-                          target_player_board_state,
-                          attacking_player_board_state):
+                          target_player_board_state=None,
+                          attacking_player_board_state=None):
     move_log_form = MoveDetails()
     setattr(move_log_form, "target_player_name",
             move['target_player'])
@@ -77,10 +83,12 @@ def copy_move_log_to_form(index,
             move['status'])
     setattr(move_log_form, "move_number",
             index + 1)
-    setattr(move_log_form, "target_player_board_state",
-            target_player_board_state)
-    setattr(move_log_form, "attacking_player_board_state",
-            attacking_player_board_state)
+    if target_player_board_state:
+        setattr(move_log_form, "target_player_board_state",
+                target_player_board_state)
+    if attacking_player_board_state:
+        setattr(move_log_form, "attacking_player_board_state",
+                attacking_player_board_state)
     if 'ship_type' in move:
         setattr(move_log_form, "ship_type",
                 move['ship_type'])
