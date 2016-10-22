@@ -367,7 +367,6 @@ class BattleshipAPI(remote.Service):
                                  target_player,
                                  move_log)
 
-
 # - - - - Info Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=GAME_REQUEST,

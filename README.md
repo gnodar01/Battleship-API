@@ -249,14 +249,23 @@ https://nodar-battle-ship.appspot.com/_ah/api/battle_ship/v1
       - "Hit - Sunk Ship"
       - "Hit - Sunk Ship: Game Over"
       - "Miss"
-    - `ship_type`
+    - `ship_type` (if hit)
       - "aircraft_carrier"
       - "battleship"
       - "submarine"
       - "destroyer"
       - "patrol_ship"
     - `move_number` - *Integer*
-
+    - `target_player_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "[empty, occupied, hit, miss]"
+    - `attacking_player_board_state` (Array of dicts)
+      - Dict for each coordinate on the board, containg row and column, and one of four statuses for each coordinate.
+        - `column`: "[A-Z]"
+        - `row`: "[1-10]"
+        - `value`: "[empty, occupied, hit, miss]"
 
 - battleship.game.get_user_games
   - Request Type: `GET`
