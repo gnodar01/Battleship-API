@@ -170,7 +170,10 @@ class BattleshipAPI(remote.Service):
 
         game.player_two = player_two.key
         game.put()
-        return copy_game_to_form(game)
+        board_state_forms = self._get_board_state_forms(game,
+                                                        player_one,
+                                                        player_two)
+        return copy_game_to_form(game, board_state_forms)
 
 # - - - - Place piece methods - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -230,8 +233,7 @@ class BattleshipAPI(remote.Service):
         check_game_not_started(game)
 
         player = get_registered_player(game, player_name)
-        player_pieces = Piece.query(Piece.game == game.key).filter(
-            Piece.player == player.key).fetch()
+        player_pieces = get_players_pieces(game, player)
 
         # Errors based on player's previously placed pieces for this game
         check_placement_validity(game,
@@ -243,13 +245,25 @@ class BattleshipAPI(remote.Service):
                       player=player.key,
                       ship=piece_type,
                       coordinates=coordinates)
-        player_pieces.append(piece)
         piece.put()
+        # I don't know why, but piece.put() needs to be called twice
+        # otherwie the response has an un-updated baord state
+        piece.put()
+        player_pieces.append(piece)
 
         # Check if all pieces for this player & game have been placed
         self._update_game_started_status(game, player, player_pieces)
 
-        return copy_piece_details_to_form(game, player, piece)
+        player_one = game.player_one.get()
+        player_two = game.player_two.get()
+        board_state_forms = self._get_board_state_forms(game,
+                                                        player_one,
+                                                        player_two)
+
+        return copy_piece_details_to_form(game,
+                                          player,
+                                          piece,
+                                          board_state_forms)
 
 # - - - - Strike Coord Methods  - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -297,9 +311,9 @@ class BattleshipAPI(remote.Service):
     def _log_history(self, game, attacking_player, target_player, move_log):
         game.history.append(move_log)
         game.put()
-        board_state_forms = self._get_board_state_forms(game,
-                                                        attacking_player,
-                                                        target_player)
+        board_state_forms = self._strike_board_state_forms(game,
+                                                           attacking_player,
+                                                           target_player)
 
         return copy_move_log_to_form(len(game.history) - 1,
                                      move_log,
@@ -401,9 +415,12 @@ class BattleshipAPI(remote.Service):
     def get_game_status(self, request):
         """Get a game's current status"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        get_board_state(game, game.player_one.get())
-        get_board_state(game, game.player_two.get())
-        return copy_game_to_form(game)
+        player_one = game.player_one.get()
+        player_two = game.player_two.get()
+        board_state_forms = self._get_board_state_forms(game,
+                                                        player_one,
+                                                        player_two)
+        return copy_game_to_form(game, board_state_forms)
 
 # - - - - Extended Methods  - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -473,8 +490,19 @@ class BattleshipAPI(remote.Service):
         # it might make sense for each game to be a descendant of a User
         user = get_user(request.user_name)
         active_games = get_users_active_games(user)
-        return UserGames(games=[copy_game_to_form(game)
-                         for game in active_games])
+        active_games_forms = []
+        for game in active_games:
+            player_one = game.player_one.get()
+            if game.player_two:
+                player_two = game.player_two.get()
+            else:
+                player_two = None
+            board_state_forms = self._get_board_state_forms(game,
+                                                            player_one,
+                                                            player_two)
+            active_games_forms.append(copy_game_to_form(game,
+                                                        board_state_forms))
+        return UserGames(games=active_games_forms)
 
     @endpoints.method(request_message=GAME_REQUEST,
                       response_message=StringMessage,
