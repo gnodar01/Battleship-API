@@ -109,7 +109,6 @@ class BattleshipAPI(remote.Service):
 # - - - - Game Methods  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _get_board_state_forms(self, game, player_one, player_two):
-        # get both player's board states
         player_one_board_state = get_board_state(
             game,
             player_one)
@@ -292,7 +291,6 @@ class BattleshipAPI(remote.Service):
         return game.game_over
 
     def _strike_board_state_forms(self, game, attacking_player, target_player):
-        # get both player's board states
         attacking_player_board_state = get_board_state(
             game,
             attacking_player)
@@ -338,10 +336,8 @@ class BattleshipAPI(remote.Service):
         """Make a move to strike a given coordinate"""
         game = get_by_urlsafe(request.url_safe_game_key, Game)
 
-        # Check if game has already ended
         check_game_not_over(game)
 
-        # Ensure game has started
         check_game_started(game)
 
         attacking_player = game.player_turn.get()
@@ -365,7 +361,6 @@ class BattleshipAPI(remote.Service):
         # missed against target player
         check_not_double_miss(game, target_player, target_coord)
 
-        # Change it to the other player's turn
         self._change_player_turn(game)
 
         # If a ship is hit
@@ -487,7 +482,6 @@ class BattleshipAPI(remote.Service):
                       http_method='GET')
     def get_user_games(self, request):
         """Returns all of a User's active games"""
-        # it might make sense for each game to be a descendant of a User
         user = get_user(request.user_name)
         active_games = get_users_active_games(user)
         active_games_forms = []
