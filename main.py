@@ -5,9 +5,8 @@ cronjobs."""
 
 import webapp2
 from google.appengine.api import mail, app_identity
-from google.appengine.ext import ndb
 from api import BattleshipAPI
-from models.ndbModels import Game, User
+from models.ndbModels import User
 from utils.getters import get_all_unfinished_games
 
 
