@@ -12,7 +12,7 @@ from math import log
 
 import endpoints
 from protorpc import remote, message_types
-from google.appengine.api import memcache
+from google.appengine.ext import ndb, memcache
 
 from models.ndbModels import User, Game, Piece, Miss
 
@@ -504,20 +504,25 @@ class BattleshipAPI(remote.Service):
                       name='game.cancel_game',
                       http_method='DELETE')
     def cancel_game(self, request):
-        """Cancels an active game"""
+        """Cancels an active game.
+
+        Args:
+            request: The GAME_REQUEST object.
+        Returns:
+            StringMessage: A message that is sent to the client, saying that
+                the game has been canceled.
+        Raises:
+            endpoints.ConflictException: If the game is already over.
+            endpoints.BadRequestException: if url safe game key is invalid.
+        """
         game = get_by_urlsafe(request.url_safe_game_key, Game)
-        if game.game_over is False:
-            game_pieces = Piece.query(Piece.game == game.key).fetch()
-            game_misses = Miss.query(Miss.game == game.key).fetch()
-            for piece in game_pieces:
-                piece.key.delete()
-            for miss in game_misses:
-                miss.key.delete()
-            game.key.delete()
-            return StringMessage(message="Game deleted")
-        else:
-            raise endpoints.ConflictException(
-                'Cannot cancel game that has already ended.')
+        check_game_not_over(game)
+        game_pieces = Piece.query(Piece.game == game.key).fetch(keys_only=True)
+        game_misses = Miss.query(Miss.game == game.key).fetch(keys_only=True)
+        ndb.delete_multi(game_pieces)
+        ndb.delete_multi(game_misses)
+        game.key.delete()
+        return StringMessage(message="Game deleted")
 
     @endpoints.method(request_message=message_types.VoidMessage,
                       response_message=Rankings,
