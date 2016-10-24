@@ -96,7 +96,22 @@ class BattleshipAPI(remote.Service):
                       name='user.create_user',
                       http_method='POST')
     def create_user(self, request):
-        """Create a User. Requires a unique username"""
+        """Create a User. Requires a unique username
+
+        Args:
+            request: The UserRequest object.
+        Returns:
+            UserForm: A form that is sent to the client, containing the
+            user's name and email.
+        Raises:
+            endpoints.ConflictException: If the email is invalid.
+            endpoints.ConflictException: If the username length
+              is less than 3 characters.
+            endpoints.ConflictException: If the username is already
+              in use.
+            endpoints.ConflictException: If the e-mail is already
+              in use.
+        """
         check_email(request.email)
         check_username_len(request.user_name)
         check_user_exists(request.user_name)
@@ -133,7 +148,17 @@ class BattleshipAPI(remote.Service):
                       name='game.create_game',
                       http_method='POST')
     def create_game(self, request):
-        """Create a new Game"""
+        """Create a new Game
+
+        Args:
+            request: The NewGameRequest object.
+        Returns:
+            GameStatusMessage: A form sent to the client, containing the
+            game's details including information on the game's player, the game
+            state, and the board states.
+        Raises:
+            endpoints.ConflictException: If player one and two are the same.
+        """
         check_players_unique(request.player_one_name, request.player_two_name)
         player_one = get_user(request.player_one_name)
 
@@ -157,7 +182,21 @@ class BattleshipAPI(remote.Service):
                       name='game.join_game',
                       http_method='PUT')
     def join_game(self, request):
-        """Join a game if not already full"""
+        """Join a game if not already full
+
+        Args:
+            request: The JOIN_GAME_REQUEST object.
+        Returns:
+            GameStatusMessage: A form sent to the client, containing the
+            game's details including information on the game's player, the game
+            state, and the board states.
+        Raises:
+            endpoints.BadRequestException: If the url safe game key is invalid.
+            endpoints.ConflictException: If game already has 2 players
+              registered.
+            endpoints.ConflictException: If the joining player is the same
+              as the currently registered player.
+        """
         game = get_by_urlsafe(request.url_safe_game_key, Game)
 
         check_game_open(game)
@@ -196,7 +235,28 @@ class BattleshipAPI(remote.Service):
                       name='game.place_piece',
                       http_method='POST')
     def place_piece(self, request):
-        """Set up a player's board pieces"""
+        """Join a game if not already full
+
+        Args:
+            request: The PLACE_PIECE_REQUEST object.
+        Returns:
+            PieceDetails: A form sent to the client, containing the
+            placed piece's details including game and owner, coordinates,
+            and the player's board states.
+        Raises:
+            endpoints.BadRequestException: If the url safe game key is invalid.
+            endpoints.ConflictException: If row or column coordinates
+              are invalid.
+            endpoints.ConflictException: If any of the spaces the piece
+              is being placed on are invalid.
+            endpoints.ConflictException: If the game hast not yet started.
+            endpoints.ConflictException: If the player is not registered
+              to the game.
+            endpoints.ConflictException: If the piece has already been
+              placed for given player.
+            endpoints.ConflictException: If the piece intersects with
+              another piece that has already been placed.
+        """
         piece_type = request.piece_type.name
         first_row_coordinate = request.first_row_coordinate
         first_column_coordinate = request.first_column_coordinate.upper()
@@ -333,7 +393,29 @@ class BattleshipAPI(remote.Service):
                       name='game.strike_coordinate',
                       http_method='POST')
     def strike_coord(self, request):
-        """Make a move to strike a given coordinate"""
+        """Make a move to strike a given coordinate
+
+        Args:
+            request: The Strike_REQUEST object.
+        Returns:
+            MoveDetails: A form sent to the client, containing the
+            target and attacking player, target coordinate, status
+            of the strike attempt, ship type, the move number for
+            the game, and the game's board states.
+        Raises:
+            endpoints.BadRequestException: If the url safe game key is invalid.
+            endpoints.ConflictException: If the game is already over.
+            endpoints.ConflictException: If the game has not yet started
+              (all of the pieces for both players have not been placed).
+            endpoints.ConflictException: If the attacking player is not
+              attacking themselves.
+            endpoints.ConflictException: If the given coordinate is not
+              valid.
+            endpoints.ConflictException: If the coordinate has already
+              been struck and hit.
+            endpoints.ConflictException: If the coordinate has already
+              been struck and missed.
+        """
         game = get_by_urlsafe(request.url_safe_game_key, Game)
 
         check_game_not_over(game)
@@ -408,7 +490,17 @@ class BattleshipAPI(remote.Service):
                       name='game.get_game_status',
                       http_method='GET')
     def get_game_status(self, request):
-        """Get a game's current status"""
+        """Get a game's current status
+
+        Args:
+            request: The GAME_REQUEST object.
+        Returns:
+            GameStatusMessage: A form sent to the client, containing the
+            game's details including information on the game's player, the game
+            state, and the board states.
+        Raises:
+            endpoints.BadRequestException: If the url safe game key is invalid.
+        """
         game = get_by_urlsafe(request.url_safe_game_key, Game)
         player_one = game.player_one.get()
         player_two = game.player_two.get()
@@ -481,7 +573,17 @@ class BattleshipAPI(remote.Service):
                       name='game.get_user_games',
                       http_method='GET')
     def get_user_games(self, request):
-        """Returns all of a User's active games"""
+        """Returns all of a User's active games
+
+        Args:
+            request: The USER_GAMES_REQUEST object.
+        Returns:
+            UserGames: A form sent to the client, containing each of a user's
+            active game's details which include information on the
+            games state, and the board states.
+        Raises:
+            endpoints.ConflictException: If the user does not exist.
+        """
         user = get_user(request.user_name)
         active_games = get_users_active_games(user)
         active_games_forms = []
@@ -530,7 +632,17 @@ class BattleshipAPI(remote.Service):
                       name='get_rankings',
                       http_method='GET')
     def get_user_ranks(self, request):
-        """Gets list of user rankings"""
+        """Gets list of user rankings
+
+        Args:
+            request: none
+        Returns:
+            Rankings: A form that is sent to the client, listing in order
+            from highest to lowest ranking, a user's score, ranking,
+            number of games won, and number of games lost.
+        Raises: none
+        """
+
         completed_games = Game.query().filter(Game.game_over == True).fetch()
         total_games = len(completed_games)
         if total_games == 0:
@@ -547,7 +659,17 @@ class BattleshipAPI(remote.Service):
                       name='game.get_game_history',
                       http_method='GET')
     def get_game_history(self, request):
-        """Gets history of all moves played for a given game"""
+        """Gets history of all moves played for a given game
+
+        Args:
+            request: The GAME_REQUEST object.
+        Returns:
+            GameHistory: A form sent to the client, contain each move that has
+            occured for the life of the game, and the details of each move.
+        Raises:
+            endpoints.BadRequestException: If the url safe game key is invalid.
+        """
+
         game_history = get_by_urlsafe(request.url_safe_game_key, Game).history
         return GameHistory(moves=[copy_move_log_to_form(index, move)
                            for index, move in enumerate(game_history)])
