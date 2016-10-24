@@ -99,6 +99,13 @@ def get_users_active_games(user):
     return active_games
 
 
+def get_all_unfinished_games():
+    """Gets all games, that have started
+    (both player's pieces placed), but yet not ended"""
+    return Game.query(ndb.AND(Game.game_started == True,
+                              Game.game_over == False)).fetch()
+
+
 def get_misses_on_player(game, player):
     return Miss.query(Miss.game == game.key).filter(
         Miss.target_player == player.key)

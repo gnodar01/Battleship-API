@@ -8,6 +8,7 @@ from google.appengine.api import mail, app_identity
 from google.appengine.ext import ndb
 from api import BattleshipAPI
 from models.ndbModels import Game, User
+from utils.getters import get_all_unfinished_games
 
 
 class SendReminderEmail(webapp2.RequestHandler):
@@ -15,9 +16,7 @@ class SendReminderEmail(webapp2.RequestHandler):
         """Send Users with unfinished games reminders, once a day,
         if it's their turn to play"""
         app_id = app_identity.get_application_id()
-        unfinished_games = Game.query(ndb.AND(
-            Game.game_started is True,
-            Game.game_over is False)).fetch()
+        unfinished_games = get_all_unfinished_games()
         users = {}
         for game in unfinished_games:
             user_id = game.player_turn.id()
