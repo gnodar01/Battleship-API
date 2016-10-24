@@ -12,7 +12,8 @@ from math import log
 
 import endpoints
 from protorpc import remote, message_types
-from google.appengine.ext import ndb, memcache
+from google.appengine.ext import ndb
+from google.appengine.api import memcache
 
 from models.ndbModels import User, Game, Piece, Miss
 
