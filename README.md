@@ -2,7 +2,7 @@
 
 ## Using API explorer
 
-You will need to launch Google Chrome from terminal with the flag `--user-data-dir=test --unsafely-treat-insecure-origin-as-secure=http://localhost:[Port Number]`
+To use [Google's API Explorer](https://developers.google.com/apis-explorer/#p/), you will need to launch Google Chrome from terminal with the flag `--user-data-dir=test --unsafely-treat-insecure-origin-as-secure=http://localhost:[Port Number]`
 
 For example (whilst quit from google chrome): 
 ```
